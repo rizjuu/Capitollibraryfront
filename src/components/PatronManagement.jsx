@@ -15,7 +15,13 @@ import {
   X,
   BookOpen,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
+  GraduationCap,
+  Home,
+  MapPin,
+  Building,
+  Hash,
+  UserCheck
 } from "lucide-react";
 import api from "../api";
 
@@ -30,6 +36,7 @@ export default function PatronManagement({ showToast }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Form & Selected User States
   const [selectedUser, setSelectedUser] = useState(null);
@@ -41,6 +48,11 @@ export default function PatronManagement({ showToast }) {
     name: "",
     email: "",
     phone: "",
+    address: "",
+    patronType: "student",
+    school: "",
+    yearLevel: "",
+    age: "",
     status: "active"
   });
 
@@ -49,6 +61,11 @@ export default function PatronManagement({ showToast }) {
     name: "",
     email: "",
     phone: "",
+    address: "",
+    patronType: "resident",
+    school: "",
+    yearLevel: "",
+    age: "",
     status: "active",
     role: "patron"
   });
@@ -94,9 +111,31 @@ export default function PatronManagement({ showToast }) {
 
     setSubmitting(true);
     try {
-      const res = await api.post("/users/patron", addForm);
+      const payload = {
+        name: addForm.name.trim(),
+        email: addForm.email.trim(),
+        phone: addForm.phone.trim(),
+        address: addForm.address.trim(),
+        patronType: addForm.patronType,
+        school: addForm.patronType === "student" ? addForm.school.trim() : "",
+        yearLevel: addForm.patronType === "student" ? addForm.yearLevel.trim() : "",
+        age: addForm.age ? parseInt(addForm.age, 10) : null,
+        status: addForm.status
+      };
+
+      const res = await api.post("/users/patron", payload);
       showToast(res.data?.message || "Patron added successfully!", "success");
-      setAddForm({ name: "", email: "", phone: "", status: "active" });
+      setAddForm({
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        patronType: "student",
+        school: "",
+        yearLevel: "",
+        age: "",
+        status: "active"
+      });
       setShowAddModal(false);
       fetchUsers();
     } catch (err) {
@@ -107,6 +146,12 @@ export default function PatronManagement({ showToast }) {
     }
   };
 
+  // Open Detail / Personal Data Modal
+  const openDetailModal = (user) => {
+    setSelectedUser(user);
+    setShowDetailModal(true);
+  };
+
   // Open Edit Modal
   const openEditModal = (user) => {
     setSelectedUser(user);
@@ -114,6 +159,11 @@ export default function PatronManagement({ showToast }) {
       name: user.name || "",
       email: user.email || "",
       phone: user.phone || "",
+      address: user.address || "",
+      patronType: user.patronType || "resident",
+      school: user.school || "",
+      yearLevel: user.yearLevel || "",
+      age: user.age || "",
       status: user.status || "active",
       role: user.role || "patron"
     });
@@ -127,10 +177,26 @@ export default function PatronManagement({ showToast }) {
 
     setSubmitting(true);
     try {
-      const res = await api.put(`/users/${selectedUser._id}`, editForm);
+      const payload = {
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        phone: editForm.phone.trim(),
+        address: editForm.address.trim(),
+        patronType: editForm.patronType,
+        school: editForm.patronType === "student" ? editForm.school.trim() : "",
+        yearLevel: editForm.patronType === "student" ? editForm.yearLevel.trim() : "",
+        age: editForm.age ? parseInt(editForm.age, 10) : null,
+        status: editForm.status,
+        role: editForm.role
+      };
+
+      const res = await api.put(`/users/${selectedUser._id}`, payload);
       showToast(res.data?.message || "Patron details updated!", "success");
       setShowEditModal(false);
-      setSelectedUser(null);
+      // Update selectedUser if detail modal was open or to reflect changes
+      if (selectedUser && res.data?.user) {
+        setSelectedUser(res.data.user);
+      }
       fetchUsers();
     } catch (err) {
       console.error("Error updating user:", err);
@@ -144,7 +210,7 @@ export default function PatronManagement({ showToast }) {
   const handleToggleStatus = async (user) => {
     const newStatus = user.status === "disabled" ? "active" : "disabled";
     try {
-      const res = await api.patch(`/users/${user._id}/status`, { status: newStatus });
+      await api.patch(`/users/${user._id}/status`, { status: newStatus });
       showToast(
         `Patron "${user.name}" has been ${newStatus === "active" ? "ENABLED" : "DISABLED"}.`,
         newStatus === "active" ? "success" : "warning"
@@ -172,6 +238,15 @@ export default function PatronManagement({ showToast }) {
     }
   };
 
+  const getInitials = (name) => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   // Stat summary calculations
   const totalUsersCount = users.length;
   const activePatronsCount = users.filter((u) => u.role === "patron" && u.status !== "disabled").length;
@@ -187,7 +262,7 @@ export default function PatronManagement({ showToast }) {
             User &amp; Patron Management
           </h1>
           <p className="page-subtitle">
-            Admin-only management: Add, search, edit, enable/disable patrons, and inspect borrowing history.
+            Admin-only management: Click any user to view complete personal records (phone, address, school/year level, age).
           </p>
         </div>
 
@@ -297,7 +372,12 @@ export default function PatronManagement({ showToast }) {
       {/* User & Patron Data Directory Table */}
       <div className="recent-transactions-card">
         <div className="card-header-row">
-          <h3 className="card-header-title">Patron &amp; User Directory</h3>
+          <div>
+            <h3 className="card-header-title">Patron &amp; User Directory</h3>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+              💡 Click any user row or &quot;View&quot; to inspect personal information
+            </span>
+          </div>
           <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
             Showing {users.length} accounts
           </span>
@@ -309,7 +389,8 @@ export default function PatronManagement({ showToast }) {
               <tr>
                 <th>ID</th>
                 <th>NAME</th>
-                <th>CONTACT EMAIL / PHONE</th>
+                <th>CONTACT / PHONE</th>
+                <th>CLASSIFICATION</th>
                 <th>ROLE</th>
                 <th>LOANS</th>
                 <th>STATUS</th>
@@ -319,7 +400,7 @@ export default function PatronManagement({ showToast }) {
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: "center", padding: "28px", color: "var(--text-muted)" }}>
+                  <td colSpan="8" style={{ textAlign: "center", padding: "28px", color: "var(--text-muted)" }}>
                     {loading ? "Loading users from database..." : "No patrons or users found matching criteria."}
                   </td>
                 </tr>
@@ -327,18 +408,50 @@ export default function PatronManagement({ showToast }) {
                 users.map((u) => {
                   const uId = u._id ? `U-${u._id.substring(u._id.length - 4).toUpperCase()}` : "U-PATRON";
                   const isDisabled = u.status === "disabled";
+                  const isStudent = u.patronType === "student";
 
                   return (
-                    <tr key={u._id} style={{ opacity: isDisabled ? 0.75 : 1 }}>
+                    <tr
+                      key={u._id}
+                      onClick={() => openDetailModal(u)}
+                      style={{
+                        opacity: isDisabled ? 0.75 : 1,
+                        cursor: "pointer",
+                        transition: "background-color 0.15s ease"
+                      }}
+                      title="Click to view patron personal details"
+                    >
                       <td><span className="id-chip">{uId}</span></td>
                       <td className="patron-cell">
                         <strong>{u.name || "Library User"}</strong>
+                        {u.age ? <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>{u.age} yrs old</span> : null}
                       </td>
                       <td className="book-title-cell">
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                           <span>✉️ {u.email || "No email"}</span>
-                          {u.phone && <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>📞 {u.phone}</span>}
+                          {u.phone ? (
+                            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>📞 {u.phone}</span>
+                          ) : (
+                            <span style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: "italic" }}>No phone</span>
+                          )}
                         </div>
+                      </td>
+                      <td>
+                        {u.role === "patron" ? (
+                          isStudent ? (
+                            <span className="status-pill active" style={{ backgroundColor: "rgba(59, 130, 246, 0.15)", color: "#3b82f6" }}>
+                              <GraduationCap size={12} style={{ marginRight: "4px" }} />
+                              Student
+                            </span>
+                          ) : (
+                            <span className="status-pill returned" style={{ backgroundColor: "rgba(34, 197, 94, 0.15)", color: "#22c55e" }}>
+                              <Home size={12} style={{ marginRight: "4px" }} />
+                              Resident
+                            </span>
+                          )
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>Staff Member</span>
+                        )}
                       </td>
                       <td>
                         <span className={`status-pill ${u.role === "admin" ? "active" : u.role === "staff" ? "returned" : "active"}`}>
@@ -361,14 +474,26 @@ export default function PatronManagement({ showToast }) {
                           {isDisabled ? "Disabled" : "Active"}
                         </span>
                       </td>
-                      <td style={{ textAlign: "right" }}>
+                      <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "inline-flex", gap: "6px" }}>
-                          {/* View & Edit Button */}
+                          {/* View Personal Data Button */}
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => openDetailModal(u)}
+                            title="View Complete Personal Details"
+                            style={{ padding: "6px 10px", fontSize: "12px" }}
+                          >
+                            <Eye size={14} />
+                            View
+                          </button>
+
+                          {/* Edit Button */}
                           <button
                             type="button"
                             className="btn btn-secondary"
                             onClick={() => openEditModal(u)}
-                            title="View / Update Patron Details"
+                            title="Update Patron Details"
                             style={{ padding: "6px 10px", fontSize: "12px" }}
                           >
                             <Edit size={14} />
@@ -417,6 +542,240 @@ export default function PatronManagement({ showToast }) {
         </div>
       </div>
 
+      {/* ======================================================== */}
+      {/* MODAL 0: PERSONAL DATA POPUP MODAL (ON CLICKING A USER)  */}
+      {/* ======================================================== */}
+      {showDetailModal && selectedUser && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowDetailModal(false)}
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(6px)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "16px"
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "var(--bg-surface)", border: "1px solid var(--border)",
+              borderRadius: "16px", padding: "28px", maxWidth: "560px", width: "100%",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+              maxHeight: "90vh", overflowY: "auto"
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                <div
+                  style={{
+                    width: "52px", height: "52px", borderRadius: "14px",
+                    backgroundColor: "var(--color-primary)", color: "#FFFDF7",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "20px", fontWeight: "700"
+                  }}
+                >
+                  {getInitials(selectedUser.name)}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "700" }}>
+                    {selectedUser.name || "Library User"}
+                  </h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+                    <span className="id-chip">
+                      {selectedUser._id ? `U-${selectedUser._id.substring(selectedUser._id.length - 4).toUpperCase()}` : "PATRON"}
+                    </span>
+                    <span className={`status-pill ${selectedUser.status === "disabled" ? "overdue" : "returned"}`}>
+                      <span className="status-pill-dot" />
+                      {selectedUser.status === "disabled" ? "Disabled" : "Active"}
+                    </span>
+                    <span className="status-pill active">
+                      {(selectedUser.role || "patron").toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDetailModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "4px" }}
+                aria-label="Close"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Classification Banner */}
+            <div
+              style={{
+                padding: "12px 16px",
+                borderRadius: "10px",
+                backgroundColor: selectedUser.patronType === "student" ? "rgba(59, 130, 246, 0.1)" : "rgba(34, 197, 94, 0.1)",
+                border: `1px solid ${selectedUser.patronType === "student" ? "rgba(59, 130, 246, 0.3)" : "rgba(34, 197, 94, 0.3)"}`,
+                marginBottom: "20px",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px"
+              }}
+            >
+              {selectedUser.patronType === "student" ? (
+                <>
+                  <GraduationCap size={22} style={{ color: "#3b82f6" }} />
+                  <div>
+                    <strong style={{ color: "#3b82f6", fontSize: "14px", display: "block" }}>Student Patron</strong>
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Enrolled student cardholder with school registration</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Home size={22} style={{ color: "#22c55e" }} />
+                  <div>
+                    <strong style={{ color: "#22c55e", fontSize: "14px", display: "block" }}>Community Resident Patron</strong>
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Registered local provincial community resident</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Personal Data Grid */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "24px" }}>
+              <h4 style={{ margin: 0, fontSize: "13px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)" }}>
+                Personal Information
+              </h4>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {/* Full Name */}
+                <div style={{ backgroundColor: "var(--bg-card)", padding: "12px 14px", borderRadius: "10px", border: "1px solid var(--border)" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600", marginBottom: "4px" }}>
+                    Full Name
+                  </div>
+                  <div style={{ fontSize: "14px", fontWeight: "600" }}>
+                    {selectedUser.name || "—"}
+                  </div>
+                </div>
+
+                {/* Phone Number */}
+                <div style={{ backgroundColor: "var(--bg-card)", padding: "12px 14px", borderRadius: "10px", border: "1px solid var(--border)" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600", marginBottom: "4px" }}>
+                    Phone Number
+                  </div>
+                  <div style={{ fontSize: "14px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Phone size={14} style={{ color: "var(--color-primary)" }} />
+                    {selectedUser.phone || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Not provided</span>}
+                  </div>
+                </div>
+
+                {/* Age */}
+                <div style={{ backgroundColor: "var(--bg-card)", padding: "12px 14px", borderRadius: "10px", border: "1px solid var(--border)" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600", marginBottom: "4px" }}>
+                    Age
+                  </div>
+                  <div style={{ fontSize: "14px", fontWeight: "600" }}>
+                    {selectedUser.age ? `${selectedUser.age} years old` : <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Not provided</span>}
+                  </div>
+                </div>
+
+                {/* Email Address */}
+                <div style={{ backgroundColor: "var(--bg-card)", padding: "12px 14px", borderRadius: "10px", border: "1px solid var(--border)" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600", marginBottom: "4px" }}>
+                    Email Address
+                  </div>
+                  <div style={{ fontSize: "13px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {selectedUser.email || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>No email</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Complete Address (spans full width) */}
+              <div style={{ backgroundColor: "var(--bg-card)", padding: "12px 14px", borderRadius: "10px", border: "1px solid var(--border)" }}>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600", marginBottom: "4px" }}>
+                  Residential Address
+                </div>
+                <div style={{ fontSize: "14px", fontWeight: "500", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                  <MapPin size={16} style={{ color: "var(--color-primary)", flexShrink: 0, marginTop: "2px" }} />
+                  <span>
+                    {selectedUser.address || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>No address provided</span>}
+                  </span>
+                </div>
+              </div>
+
+              {/* STUDENT ONLY: School and Year Level */}
+              {/* If Resident: as requested, show all that EXCEPT school and year level! */}
+              {selectedUser.patronType === "student" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "12px", marginTop: "4px" }}>
+                  <div style={{ backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "12px 14px", borderRadius: "10px", border: "1px solid rgba(59, 130, 246, 0.25)" }}>
+                    <div style={{ fontSize: "11px", color: "#3b82f6", textTransform: "uppercase", fontWeight: "600", marginBottom: "4px" }}>
+                      School / University
+                    </div>
+                    <div style={{ fontSize: "14px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Building size={14} style={{ color: "#3b82f6" }} />
+                      {selectedUser.school || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Not specified</span>}
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "12px 14px", borderRadius: "10px", border: "1px solid rgba(59, 130, 246, 0.25)" }}>
+                    <div style={{ fontSize: "11px", color: "#3b82f6", textTransform: "uppercase", fontWeight: "600", marginBottom: "4px" }}>
+                      Year Level / Grade
+                    </div>
+                    <div style={{ fontSize: "14px", fontWeight: "600" }}>
+                      {selectedUser.yearLevel || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Not specified</span>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Circulation & History Snapshot */}
+              {selectedUser.role === "patron" && (
+                <div style={{ backgroundColor: "var(--bg-card)", padding: "12px 14px", borderRadius: "10px", border: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600" }}>
+                      Borrowing Record
+                    </div>
+                    <div style={{ fontSize: "13px", marginTop: "2px" }}>
+                      <strong>{selectedUser.activeLoans || 0}</strong> active borrowed items &middot; <strong>{selectedUser.totalLoans || 0}</strong> total historical loans
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      openHistoryModal(selectedUser);
+                    }}
+                    style={{ fontSize: "12px", padding: "6px 12px" }}
+                  >
+                    <History size={14} />
+                    View History
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", paddingTop: "10px", borderTop: "1px solid var(--border)" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowDetailModal(false);
+                  openEditModal(selectedUser);
+                }}
+              >
+                <Edit size={16} />
+                Edit Patron Details
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowDetailModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ============================================ */}
       {/* MODAL 1: ADD PATRON MODAL                     */}
       {/* ============================================ */}
@@ -428,8 +787,9 @@ export default function PatronManagement({ showToast }) {
         }}>
           <div style={{
             backgroundColor: "var(--bg-surface)", border: "1px solid var(--border)",
-            borderRadius: "16px", padding: "28px", maxWidth: "480px", width: "100%",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
+            borderRadius: "16px", padding: "28px", maxWidth: "520px", width: "100%",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+            maxHeight: "90vh", overflowY: "auto"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <h3 style={{ margin: 0, fontSize: "18px", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -442,7 +802,7 @@ export default function PatronManagement({ showToast }) {
             </div>
 
             <form onSubmit={handleAddPatronSubmit}>
-              <div style={{ marginBottom: "16px" }}>
+              <div style={{ marginBottom: "14px" }}>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Full Name *</label>
                 <input
                   type="text"
@@ -454,30 +814,107 @@ export default function PatronManagement({ showToast }) {
                 />
               </div>
 
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Email Address *</label>
-                <input
-                  type="email"
-                  className="input-field"
-                  placeholder="patron@example.com"
-                  value={addForm.email}
-                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                  required
-                />
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "10px", marginBottom: "14px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Email Address *</label>
+                  <input
+                    type="email"
+                    className="input-field"
+                    placeholder="patron@example.com"
+                    value={addForm.email}
+                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Phone Number</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="09171234567"
+                    value={addForm.phone}
+                    onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+                  />
+                </div>
               </div>
 
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Contact Phone Number</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="e.g. 09171234567"
-                  value={addForm.phone}
-                  onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
-                />
+              <div style={{ display: "grid", gridTemplateColumns: "1.3fr 0.7fr", gap: "10px", marginBottom: "14px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Address</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. Brgy. 4, Cagayan de Oro City"
+                    value={addForm.address}
+                    onChange={(e) => setAddForm({ ...addForm, address: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Age</label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="120"
+                    className="input-field"
+                    placeholder="e.g. 20"
+                    value={addForm.age}
+                    onChange={(e) => setAddForm({ ...addForm, age: e.target.value })}
+                  />
+                </div>
               </div>
 
-              <div style={{ marginBottom: "24px" }}>
+              {/* Classification Selector: Student vs Resident */}
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Patron Classification</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className={`btn ${addForm.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setAddForm({ ...addForm, patronType: "student" })}
+                    style={{ justifyContent: "center" }}
+                  >
+                    <GraduationCap size={16} />
+                    Student
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${addForm.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setAddForm({ ...addForm, patronType: "resident" })}
+                    style={{ justifyContent: "center" }}
+                  >
+                    <Home size={16} />
+                    Resident
+                  </button>
+                </div>
+              </div>
+
+              {/* Student specific fields */}
+              {addForm.patronType === "student" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "10px", marginBottom: "14px", backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", marginBottom: "4px", color: "#3b82f6" }}>School / University</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. Capitol University"
+                      value={addForm.school}
+                      onChange={(e) => setAddForm({ ...addForm, school: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", marginBottom: "4px", color: "#3b82f6" }}>Year Level</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. 2nd Year"
+                      value={addForm.yearLevel}
+                      onChange={(e) => setAddForm({ ...addForm, yearLevel: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginBottom: "20px" }}>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Account Status</label>
                 <select
                   className="select-field"
@@ -514,8 +951,9 @@ export default function PatronManagement({ showToast }) {
         }}>
           <div style={{
             backgroundColor: "var(--bg-surface)", border: "1px solid var(--border)",
-            borderRadius: "16px", padding: "28px", maxWidth: "480px", width: "100%",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
+            borderRadius: "16px", padding: "28px", maxWidth: "520px", width: "100%",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+            maxHeight: "90vh", overflowY: "auto"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <h3 style={{ margin: 0, fontSize: "18px", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -528,7 +966,7 @@ export default function PatronManagement({ showToast }) {
             </div>
 
             <form onSubmit={handleEditUserSubmit}>
-              <div style={{ marginBottom: "16px" }}>
+              <div style={{ marginBottom: "14px" }}>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Full Name</label>
                 <input
                   type="text"
@@ -539,52 +977,131 @@ export default function PatronManagement({ showToast }) {
                 />
               </div>
 
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Email Address</label>
-                <input
-                  type="email"
-                  className="input-field"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  required
-                />
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "10px", marginBottom: "14px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Email Address</label>
+                  <input
+                    type="email"
+                    className="input-field"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Phone Number</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  />
+                </div>
               </div>
 
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Phone / Contact Number</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                />
+              <div style={{ display: "grid", gridTemplateColumns: "1.3fr 0.7fr", gap: "10px", marginBottom: "14px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Residential Address</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="e.g. Brgy. 4, Cagayan de Oro City"
+                    value={editForm.address}
+                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Age</label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="120"
+                    className="input-field"
+                    placeholder="Age"
+                    value={editForm.age}
+                    onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
+                  />
+                </div>
               </div>
 
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Account Role</label>
-                <select
-                  className="select-field"
-                  value={editForm.role}
-                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                  style={{ width: "100%" }}
-                >
-                  <option value="patron">Patron</option>
-                  <option value="staff">Staff</option>
-                  <option value="admin">Administrator</option>
-                </select>
+              {/* Classification Selector: Student vs Resident */}
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Patron Classification</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className={`btn ${editForm.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setEditForm({ ...editForm, patronType: "student" })}
+                    style={{ justifyContent: "center" }}
+                  >
+                    <GraduationCap size={16} />
+                    Student
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${editForm.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setEditForm({ ...editForm, patronType: "resident" })}
+                    style={{ justifyContent: "center" }}
+                  >
+                    <Home size={16} />
+                    Resident
+                  </button>
+                </div>
               </div>
 
-              <div style={{ marginBottom: "24px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Account Status</label>
-                <select
-                  className="select-field"
-                  value={editForm.status}
-                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                  style={{ width: "100%" }}
-                >
-                  <option value="active">Active (Enabled)</option>
-                  <option value="disabled">Disabled (Blocked from login)</option>
-                </select>
+              {/* Student specific fields */}
+              {editForm.patronType === "student" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "10px", marginBottom: "14px", backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", marginBottom: "4px", color: "#3b82f6" }}>School / University</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. Capitol University"
+                      value={editForm.school}
+                      onChange={(e) => setEditForm({ ...editForm, school: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", marginBottom: "4px", color: "#3b82f6" }}>Year Level</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="e.g. 2nd Year"
+                      value={editForm.yearLevel}
+                      onChange={(e) => setEditForm({ ...editForm, yearLevel: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Account Role</label>
+                  <select
+                    className="select-field"
+                    value={editForm.role}
+                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                    style={{ width: "100%" }}
+                  >
+                    <option value="patron">Patron</option>
+                    <option value="staff">Staff</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>Account Status</label>
+                  <select
+                    className="select-field"
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    style={{ width: "100%" }}
+                  >
+                    <option value="active">Active (Enabled)</option>
+                    <option value="disabled">Disabled (Blocked)</option>
+                  </select>
+                </div>
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>

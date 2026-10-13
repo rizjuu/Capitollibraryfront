@@ -1,12 +1,34 @@
 import { useEffect, useState } from "react";
-import { AtSign, CheckCircle2, Loader2, Phone, Save, ShieldCheck, User } from "lucide-react";
+import {
+  AtSign,
+  CheckCircle2,
+  Loader2,
+  Phone,
+  Save,
+  ShieldCheck,
+  User,
+  MapPin,
+  GraduationCap,
+  Home,
+  Building
+} from "lucide-react";
 import { motion } from "framer-motion";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
 
 function Profile({ showToast = () => {} }) {
   const { user, updateUser } = useAuth();
-  const [profile, setProfile] = useState({ firstName: "", lastName: "", email: "", phone: "" });
+  const [profile, setProfile] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    age: "",
+    patronType: "student",
+    school: "",
+    yearLevel: ""
+  });
   const [account, setAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,7 +57,12 @@ function Profile({ showToast = () => {} }) {
           firstName,
           lastName,
           email: currentUser.email || "",
-          phone: currentUser.phone || ""
+          phone: currentUser.phone || "",
+          address: currentUser.address || "",
+          age: currentUser.age || "",
+          patronType: currentUser.patronType || "student",
+          school: currentUser.school || "",
+          yearLevel: currentUser.yearLevel || ""
         });
         updateUser(currentUser);
       })
@@ -47,7 +74,12 @@ function Profile({ showToast = () => {} }) {
           firstName,
           lastName,
           email: user?.email || "",
-          phone: user?.phone || ""
+          phone: user?.phone || "",
+          address: user?.address || "",
+          age: user?.age || "",
+          patronType: user?.patronType || "student",
+          school: user?.school || "",
+          yearLevel: user?.yearLevel || ""
         });
       })
       .finally(() => setLoading(false));
@@ -64,13 +96,21 @@ function Profile({ showToast = () => {} }) {
     setSaving(true);
     const fullName = `${profile.firstName.trim()} ${profile.lastName.trim()}`.trim();
     try {
-      const response = await api.patch("/auth/me", {
+      const payload = {
         name: fullName,
         firstName: profile.firstName.trim(),
         lastName: profile.lastName.trim(),
         email: profile.email.trim(),
-        phone: profile.phone ? profile.phone.trim() : ""
-      });
+        phone: profile.phone ? profile.phone.trim() : "",
+        address: profile.address ? profile.address.trim() : "",
+        age: profile.age ? parseInt(profile.age, 10) : null,
+        patronType: profile.patronType,
+        school: profile.patronType === "student" ? (profile.school || "").trim() : "",
+        yearLevel: profile.patronType === "student" ? (profile.yearLevel || "").trim() : "",
+        isProfileCompleted: true
+      };
+
+      const response = await api.patch("/auth/me", payload);
       setAccount(response.data.user);
       updateUser(response.data.user);
       showToast("Profile updated successfully.", "success");
@@ -82,6 +122,7 @@ function Profile({ showToast = () => {} }) {
   };
 
   const currentAccount = account || user || {};
+  const isPatron = currentAccount.role === "patron";
 
   return (
     <motion.div className="dashboard-shell" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -103,10 +144,10 @@ function Profile({ showToast = () => {} }) {
             </div>
 
             <div className="form-grid-2col" style={{ marginBottom: "24px" }}>
-              <div className="form-group"><label className="form-label">Username</label><div className="form-readonly">{currentAccount.username || "Not set"}</div></div>
+              <div className="form-group"><label className="form-label">Username / Identifier</label><div className="form-readonly">{currentAccount.username || currentAccount.email || "Not set"}</div></div>
               <div className="form-group"><label className="form-label">Role</label><div className="form-readonly">{currentAccount.role ? currentAccount.role.charAt(0).toUpperCase() + currentAccount.role.slice(1) : "User"}</div></div>
               <div className="form-group"><label className="form-label">Account Status</label><div className="form-readonly" style={{ color: "var(--color-success)" }}><CheckCircle2 size={16} /> {currentAccount.status || "Active"}</div></div>
-              <div className="form-group"><label className="form-label">Account ID</label><div className="form-readonly">{currentAccount.id || currentAccount._id || "Not available"}</div></div>
+              <div className="form-group"><label className="form-label">Classification</label><div className="form-readonly">{isPatron ? (profile.patronType === "student" ? "🎓 Student" : "🏡 Resident") : "Staff/Admin"}</div></div>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -168,7 +209,96 @@ function Profile({ showToast = () => {} }) {
                     placeholder="Add a phone number"
                   />
                 </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="profile-address">
+                    <MapPin size={16} /> Residential Address
+                  </label>
+                  <input
+                    id="profile-address"
+                    type="text"
+                    className="form-input"
+                    value={profile.address}
+                    onChange={(event) => setProfile({ ...profile, address: event.target.value })}
+                    placeholder="Enter street, barangay, city"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="profile-age">
+                    Age
+                  </label>
+                  <input
+                    id="profile-age"
+                    type="number"
+                    min="5"
+                    max="120"
+                    className="form-input"
+                    value={profile.age}
+                    onChange={(event) => setProfile({ ...profile, age: event.target.value })}
+                    placeholder="e.g. 21"
+                  />
+                </div>
               </div>
+
+              {/* Patron classification toggle */}
+              {isPatron && (
+                <div style={{ marginTop: "16px", marginBottom: "16px" }}>
+                  <label className="form-label" style={{ marginBottom: "8px" }}>
+                    Patron Classification
+                  </label>
+                  <div style={{ display: "flex", gap: "10px", maxWidth: "400px" }}>
+                    <button
+                      type="button"
+                      className={`btn ${profile.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
+                      onClick={() => setProfile({ ...profile, patronType: "student" })}
+                      style={{ flex: 1, justifyContent: "center" }}
+                    >
+                      <GraduationCap size={16} />
+                      Student
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${profile.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
+                      onClick={() => setProfile({ ...profile, patronType: "resident" })}
+                      style={{ flex: 1, justifyContent: "center" }}
+                    >
+                      <Home size={16} />
+                      Resident
+                    </button>
+                  </div>
+
+                  {/* Student Academic Details */}
+                  {/* If resident: omitted! */}
+                  {profile.patronType === "student" && (
+                    <div className="form-grid-2col" style={{ marginTop: "14px", backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "14px", borderRadius: "10px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                      <div className="form-group">
+                        <label className="form-label" style={{ color: "#3b82f6" }}>
+                          <Building size={16} /> School / University
+                        </label>
+                        <input
+                          className="form-input"
+                          value={profile.school}
+                          onChange={(e) => setProfile({ ...profile, school: e.target.value })}
+                          placeholder="e.g. Capitol University, USTP"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" style={{ color: "#3b82f6" }}>
+                          Year Level / Grade
+                        </label>
+                        <input
+                          className="form-input"
+                          value={profile.yearLevel}
+                          onChange={(e) => setProfile({ ...profile, yearLevel: e.target.value })}
+                          placeholder="e.g. 2nd Year College"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="form-actions" style={{ marginTop: "24px" }}>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
                   {saving ? (

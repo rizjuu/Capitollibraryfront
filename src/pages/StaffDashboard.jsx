@@ -12,7 +12,7 @@ import Profile from "./Profile";
 import ToastContainer from "../components/ToastContainer";
 import { useAuth } from "../context/AuthContext";
 import api from "../api";
-import { Users } from "lucide-react";
+import { Users, GraduationCap, Home, Phone, MapPin, Building, X, Eye } from "lucide-react";
 
 function StaffDashboard() {
   const { theme, toggleTheme } = useAuth();
@@ -23,6 +23,8 @@ function StaffDashboard() {
   const [toasts, setToasts] = useState([]);
   const [patrons, setPatrons] = useState([]);
   const [loadingPatrons, setLoadingPatrons] = useState(true);
+  const [selectedPatron, setSelectedPatron] = useState(null);
+  const [showPatronDetailModal, setShowPatronDetailModal] = useState(false);
 
   // Live Dashboard Stats State from MongoDB
   const [dashboardStats, setDashboardStats] = useState({
@@ -218,6 +220,9 @@ function StaffDashboard() {
             <div className="recent-transactions-card">
               <div className="card-header-row">
                 <h3 className="card-header-title">Registered Library Patrons</h3>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                  💡 Click any patron row to inspect personal information
+                </span>
               </div>
 
               <div className="table-container">
@@ -226,44 +231,205 @@ function StaffDashboard() {
                     <tr>
                       <th>CARD ID</th>
                       <th>PATRON NAME</th>
-                      <th>EMAIL ADDRESS</th>
+                      <th>CONTACT / PHONE</th>
+                      <th>CLASSIFICATION</th>
                       <th>ACTIVE LOANS</th>
                       <th>STATUS</th>
+                      <th style={{ textAlign: "right" }}>ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loadingPatrons ? (
                       <tr>
-                        <td colSpan={5} style={{ textAlign: "center", padding: "16px", color: "var(--text-muted)" }}>
+                        <td colSpan={7} style={{ textAlign: "center", padding: "16px", color: "var(--text-muted)" }}>
                           Loading patrons...
                         </td>
                       </tr>
                     ) : patrons.length === 0 ? (
                       <tr>
-                        <td colSpan={5} style={{ textAlign: "center", padding: "16px", color: "var(--text-muted)" }}>
+                        <td colSpan={7} style={{ textAlign: "center", padding: "16px", color: "var(--text-muted)" }}>
                           No registered patrons yet.
                         </td>
                       </tr>
                     ) : (
-                      patrons.map((p) => (
-                        <tr key={p._id}>
-                          <td><span className="id-chip">{p._id.slice(-6).toUpperCase()}</span></td>
-                          <td className="patron-cell">{p.name}</td>
-                          <td className="book-title-cell">{p.email}</td>
-                          <td>{p.activeLoans ?? 0} items</td>
-                          <td>
-                            <span className={`status-pill ${p.status === "disabled" ? "overdue" : "active"}`}>
-                              <span className="status-pill-dot" />
-                              {p.status === "disabled" ? "Disabled" : "Good Standing"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
+                      patrons.map((p) => {
+                        const isStudent = p.patronType === "student";
+                        return (
+                          <tr
+                            key={p._id}
+                            onClick={() => {
+                              setSelectedPatron(p);
+                              setShowPatronDetailModal(true);
+                            }}
+                            style={{ cursor: "pointer" }}
+                            title="Click to view personal details"
+                          >
+                            <td><span className="id-chip">{p._id.slice(-6).toUpperCase()}</span></td>
+                            <td className="patron-cell">
+                              <strong>{p.name}</strong>
+                              {p.age ? <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>{p.age} yrs old</span> : null}
+                            </td>
+                            <td className="book-title-cell">
+                              <div>{p.email}</div>
+                              {p.phone && <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>📞 {p.phone}</div>}
+                            </td>
+                            <td>
+                              {isStudent ? (
+                                <span className="status-pill active" style={{ backgroundColor: "rgba(59, 130, 246, 0.15)", color: "#3b82f6" }}>
+                                  <GraduationCap size={12} style={{ marginRight: "4px" }} />
+                                  Student
+                                </span>
+                              ) : (
+                                <span className="status-pill returned" style={{ backgroundColor: "rgba(34, 197, 94, 0.15)", color: "#22c55e" }}>
+                                  <Home size={12} style={{ marginRight: "4px" }} />
+                                  Resident
+                                </span>
+                              )}
+                            </td>
+                            <td>{p.activeLoans ?? 0} items</td>
+                            <td>
+                              <span className={`status-pill ${p.status === "disabled" ? "overdue" : "active"}`}>
+                                <span className="status-pill-dot" />
+                                {p.status === "disabled" ? "Disabled" : "Good Standing"}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                  setSelectedPatron(p);
+                                  setShowPatronDetailModal(true);
+                                }}
+                                style={{ padding: "4px 8px", fontSize: "12px" }}
+                              >
+                                <Eye size={14} />
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
               </div>
             </div>
+
+            {/* Staff Patron Details Modal */}
+            {showPatronDetailModal && selectedPatron && (
+              <div
+                className="modal-backdrop"
+                onClick={() => setShowPatronDetailModal(false)}
+                style={{
+                  position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                  backgroundColor: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(6px)",
+                  display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "16px"
+                }}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    backgroundColor: "var(--bg-surface)", border: "1px solid var(--border)",
+                    borderRadius: "16px", padding: "28px", maxWidth: "520px", width: "100%",
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                    maxHeight: "90vh", overflowY: "auto"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700" }}>{selectedPatron.name}</h3>
+                      <span className="id-chip" style={{ marginTop: "4px", display: "inline-block" }}>
+                        CARD: {selectedPatron._id.slice(-6).toUpperCase()}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPatronDetailModal(false)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  {/* Classification Banner */}
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      backgroundColor: selectedPatron.patronType === "student" ? "rgba(59, 130, 246, 0.1)" : "rgba(34, 197, 94, 0.1)",
+                      border: `1px solid ${selectedPatron.patronType === "student" ? "rgba(59, 130, 246, 0.3)" : "rgba(34, 197, 94, 0.3)"}`,
+                      marginBottom: "16px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px"
+                    }}
+                  >
+                    {selectedPatron.patronType === "student" ? (
+                      <>
+                        <GraduationCap size={20} style={{ color: "#3b82f6" }} />
+                        <span style={{ color: "#3b82f6", fontWeight: "600", fontSize: "13px" }}>Student Cardholder</span>
+                      </>
+                    ) : (
+                      <>
+                        <Home size={20} style={{ color: "#22c55e" }} />
+                        <span style={{ color: "#22c55e", fontWeight: "600", fontSize: "13px" }}>Resident Cardholder</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
+                    <div style={{ backgroundColor: "var(--bg-card)", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600" }}>Phone</div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", marginTop: "2px" }}>
+                        {selectedPatron.phone || "Not provided"}
+                      </div>
+                    </div>
+                    <div style={{ backgroundColor: "var(--bg-card)", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600" }}>Age</div>
+                      <div style={{ fontSize: "13px", fontWeight: "600", marginTop: "2px" }}>
+                        {selectedPatron.age ? `${selectedPatron.age} yrs` : "Not provided"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: "var(--bg-card)", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--border)", marginBottom: "12px" }}>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600" }}>Address</div>
+                    <div style={{ fontSize: "13px", fontWeight: "500", marginTop: "2px" }}>
+                      {selectedPatron.address || "Not provided"}
+                    </div>
+                  </div>
+
+                  {selectedPatron.patronType === "student" && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "10px", marginBottom: "12px" }}>
+                      <div style={{ backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "10px 12px", borderRadius: "8px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                        <div style={{ fontSize: "11px", color: "#3b82f6", textTransform: "uppercase", fontWeight: "600" }}>School</div>
+                        <div style={{ fontSize: "13px", fontWeight: "600", marginTop: "2px" }}>
+                          {selectedPatron.school || "Not specified"}
+                        </div>
+                      </div>
+                      <div style={{ backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "10px 12px", borderRadius: "8px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                        <div style={{ fontSize: "11px", color: "#3b82f6", textTransform: "uppercase", fontWeight: "600" }}>Year Level</div>
+                        <div style={{ fontSize: "13px", fontWeight: "600", marginTop: "2px" }}>
+                          {selectedPatron.yearLevel || "Not specified"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ backgroundColor: "var(--bg-card)", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--border)", marginBottom: "20px" }}>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: "600" }}>Email</div>
+                    <div style={{ fontSize: "13px", fontWeight: "500", marginTop: "2px" }}>{selectedPatron.email || "No email"}</div>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <button type="button" className="btn btn-primary" onClick={() => setShowPatronDetailModal(false)}>
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -15,11 +15,19 @@ import {
   CheckSquare,
   Search,
   History,
+  UserCheck,
+  GraduationCap,
+  Home,
+  MapPin,
+  Building,
+  Phone,
+  X,
+  Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 function PatronDashboard() {
-  const { user, theme, toggleTheme } = useAuth();
+  const { user, updateUser, theme, toggleTheme } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [books, setBooks] = useState([]);
@@ -35,6 +43,19 @@ function PatronDashboard() {
     nextDueDate: null
   });
   const [loadingLoans, setLoadingLoans] = useState(true);
+
+  // First-access Patron Data Onboarding Popup Modal
+  const [showProfileSetupModal, setShowProfileSetupModal] = useState(false);
+  const [setupForm, setSetupForm] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
+    age: user?.age || "",
+    patronType: user?.patronType || "student",
+    school: user?.school || "",
+    yearLevel: user?.yearLevel || ""
+  });
+  const [savingSetup, setSavingSetup] = useState(false);
 
   const showToast = (message, type = "info") => {
     const id = Date.now();
@@ -96,6 +117,87 @@ function PatronDashboard() {
     fetchMyHistory();
     fetchMyStats();
   }, []);
+
+  // Check on first access if patron has not filled out personal data
+  useEffect(() => {
+    if (user && user.role === "patron") {
+      const isComplete =
+        Boolean(user.isProfileCompleted) &&
+        Boolean(user.address) &&
+        Boolean(user.phone) &&
+        Boolean(user.age) &&
+        (user.patronType !== "student" || (Boolean(user.school) && Boolean(user.yearLevel)));
+
+      if (!isComplete) {
+        setSetupForm({
+          name: user.name || "",
+          phone: user.phone || "",
+          address: user.address || "",
+          age: user.age || "",
+          patronType: user.patronType || "student",
+          school: user.school || "",
+          yearLevel: user.yearLevel || ""
+        });
+        setShowProfileSetupModal(true);
+      }
+    }
+  }, [user]);
+
+  const handleSaveProfileSetup = async (e) => {
+    e.preventDefault();
+    if (!setupForm.name.trim()) {
+      showToast("Full name is required", "error");
+      return;
+    }
+    if (!setupForm.phone.trim()) {
+      showToast("Phone number is required", "error");
+      return;
+    }
+    if (!setupForm.address.trim()) {
+      showToast("Residential address is required", "error");
+      return;
+    }
+    if (!setupForm.age) {
+      showToast("Age is required", "error");
+      return;
+    }
+    if (setupForm.patronType === "student") {
+      if (!setupForm.school.trim()) {
+        showToast("School or University is required for students", "error");
+        return;
+      }
+      if (!setupForm.yearLevel.trim()) {
+        showToast("Year level is required for students", "error");
+        return;
+      }
+    }
+
+    setSavingSetup(true);
+    try {
+      const payload = {
+        name: setupForm.name.trim(),
+        phone: setupForm.phone.trim(),
+        address: setupForm.address.trim(),
+        age: parseInt(setupForm.age, 10),
+        patronType: setupForm.patronType,
+        school: setupForm.patronType === "student" ? setupForm.school.trim() : "",
+        yearLevel: setupForm.patronType === "student" ? setupForm.yearLevel.trim() : "",
+        isProfileCompleted: true
+      };
+
+      const res = await api.patch("/auth/me", payload);
+      if (res.data?.user) {
+        updateUser(res.data.user);
+      }
+      setShowProfileSetupModal(false);
+      showToast("🎉 Welcome to Capitol Library! Your patron profile is completed.", "success");
+    } catch (err) {
+      console.error("Error saving patron profile:", err);
+      showToast(err.response?.data?.message || "Failed to save profile. Please try again.", "error");
+    } finally {
+      setSavingSetup(false);
+    }
+  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
@@ -531,6 +633,213 @@ function PatronDashboard() {
           <span>Role: Patron | Member Services Active</span>
         </footer>
       </main>
+
+      {/* ======================================================== */}
+      {/* FIRST-ACCESS ONBOARDING MODAL: FILL PATRON PERSONAL DATA */}
+      {/* ======================================================== */}
+      {showProfileSetupModal && (
+        <div
+          className="modal-backdrop"
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.8)", backdropFilter: "blur(8px)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 120, padding: "16px"
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--bg-surface)", border: "1px solid var(--border)",
+              borderRadius: "18px", padding: "28px", maxWidth: "520px", width: "100%",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)",
+              maxHeight: "92vh", overflowY: "auto", position: "relative"
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", marginBottom: "18px" }}>
+              <div
+                style={{
+                  width: "48px", height: "48px", borderRadius: "12px",
+                  backgroundColor: "rgba(111, 78, 55, 0.15)", color: "var(--color-primary)",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+                }}
+              >
+                <Sparkles size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-primary)" }}>
+                    First Time Setup
+                  </span>
+                  <span className="id-chip" style={{ fontSize: "10px" }}>Patron Profile</span>
+                </div>
+                <h3 style={{ margin: "2px 0 4px 0", fontSize: "19px", fontWeight: "700" }}>
+                  Welcome to Capitol Library!
+                </h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                  Please fill out your personal information to activate your cardholder borrowing privileges.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveProfileSetup}>
+              {/* Full Name */}
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. Juan Dela Cruz"
+                  value={setupForm.name}
+                  onChange={(e) => setSetupForm({ ...setupForm, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Phone & Age */}
+              <div style={{ display: "grid", gridTemplateColumns: "1.3fr 0.7fr", gap: "10px", marginBottom: "14px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+                    Phone / Contact Number *
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="0917 123 4567"
+                    value={setupForm.phone}
+                    onChange={(e) => setSetupForm({ ...setupForm, phone: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+                    Age *
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="120"
+                    className="input-field"
+                    placeholder="e.g. 20"
+                    value={setupForm.age}
+                    onChange={(e) => setSetupForm({ ...setupForm, age: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Residential Address */}
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+                  Residential Address *
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. Brgy. 4, Cagayan de Oro City"
+                  value={setupForm.address}
+                  onChange={(e) => setSetupForm({ ...setupForm, address: e.target.value })}
+                  required
+                />
+              </div>
+
+              {/* Patron Classification: Student vs Resident */}
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+                  Patron Classification *
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <button
+                    type="button"
+                    className={`btn ${setupForm.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setSetupForm({ ...setupForm, patronType: "student" })}
+                    style={{ justifyContent: "center", padding: "10px" }}
+                  >
+                    <GraduationCap size={18} />
+                    <span>Student</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${setupForm.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setSetupForm({ ...setupForm, patronType: "resident" })}
+                    style={{ justifyContent: "center", padding: "10px" }}
+                  >
+                    <Home size={18} />
+                    <span>Resident</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Conditional Student Fields (School & Year Level) */}
+              {/* If Resident: school and year level are omitted! */}
+              {setupForm.patronType === "student" && (
+                <div
+                  style={{
+                    backgroundColor: "rgba(59, 130, 246, 0.05)",
+                    border: "1px solid rgba(59, 130, 246, 0.25)",
+                    borderRadius: "12px",
+                    padding: "14px",
+                    marginBottom: "16px"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px", color: "#3b82f6", fontSize: "12px", fontWeight: "700", textTransform: "uppercase" }}>
+                    <Building size={14} /> Student Academic Information
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: "600", marginBottom: "4px" }}>
+                        School / University *
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="e.g. Capitol University"
+                        value={setupForm.school}
+                        onChange={(e) => setSetupForm({ ...setupForm, school: e.target.value })}
+                        required={setupForm.patronType === "student"}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: "600", marginBottom: "4px" }}>
+                        Year Level *
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="e.g. 2nd Year College"
+                        value={setupForm.yearLevel}
+                        onChange={(e) => setSetupForm({ ...setupForm, yearLevel: e.target.value })}
+                        required={setupForm.patronType === "student"}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowProfileSetupModal(false)}
+                >
+                  Fill Later
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={savingSetup}
+                  style={{ minWidth: "160px" }}
+                >
+                  {savingSetup ? "Saving Profile..." : "Save & Continue"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
