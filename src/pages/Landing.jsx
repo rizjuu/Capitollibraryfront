@@ -35,6 +35,14 @@ export default function Landing() {
   const [selectedCatalogBook, setSelectedCatalogBook] = useState(null);
   const [loadingBooks, setLoadingBooks] = useState(true);
 
+  const handleHeroSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    const directorySection = document.getElementById("directory");
+    if (directorySection) {
+      directorySection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   const handleGetStarted = () => {
     if (user) {
       const dest =
@@ -262,7 +270,7 @@ export default function Landing() {
           <div className="hero-text-side">
             <div className="hero-eyebrow-pill">
               <Sparkles size={14} />
-              Official Public Library Portal
+              Misamis Oriental Provincial Capitol Public Library
             </div>
 
             <h1 className="hero-title-main">
@@ -272,6 +280,64 @@ export default function Landing() {
             <p className="hero-desc-main">
               Welcome to the Misamis Oriental Provincial Capitol Public Library. Explore over 12,000+ titles, Filipiniana archives, digital e-resources, and modern circulation services.
             </p>
+
+            {/* FRONT PAGE SEARCH BOOKS ENTRY */}
+            <form onSubmit={handleHeroSearchSubmit} className="hero-search-entry-container" role="search" aria-label="Search Library Catalog">
+              <div className="hero-search-entry-bar">
+                <Search size={22} className="hero-search-entry-icon" aria-hidden="true" />
+                <input
+                  type="text"
+                  className="hero-search-entry-input"
+                  placeholder="Search books, authors, or subjects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search books, authors, or subjects"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="hero-search-entry-clear"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    title="Clear search"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+                <button type="submit" className="hero-search-entry-submit">
+                  Search Catalog
+                </button>
+              </div>
+
+              {searchQuery.trim() ? (
+                <div
+                  className="hero-search-count-badge"
+                  onClick={handleHeroSearchSubmit}
+                  role="button"
+                  tabIndex={0}
+                  title="Click to jump to catalog results"
+                >
+                  Found {filteredLibraryBooks.length} match{filteredLibraryBooks.length === 1 ? "" : "es"} in catalog &mdash; View results &darr;
+                </div>
+              ) : (
+                <div className="hero-search-entry-tags">
+                  <span className="hero-search-tag-label">Popular:</span>
+                  {["Filipiniana", "History", "Science", "Periodical", "Law"].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className="hero-search-tag-chip"
+                      onClick={() => {
+                        setSearchQuery(tag);
+                        handleHeroSearchSubmit();
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </form>
 
             <div className="hero-cta-group">
               {user ? (

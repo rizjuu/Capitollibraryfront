@@ -23,6 +23,16 @@ function Login({ overlay = false }) {
     navigate(dashboardRoute, { replace: true });
   }, [user, navigate]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        closeLogin();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Login form state
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -168,72 +178,30 @@ function Login({ overlay = false }) {
       onClick={overlay ? closeLogin : undefined}
     >
       <div className="login-modal" onClick={(event) => event.stopPropagation()}>
-        {/* Left Banner */}
-        <div className="login-left">
-        <Link to="/" className="library-brand-link">
-          <div className="library-brand">
-            <img
-              src="/logo.webp"
-              alt="Misamis Oriental Provincial Capitol Public Library logo"
-              className="brand-icon"
-            />
-            <div>
-              <small>MISAMIS ORIENTAL</small>
-              <strong>Provincial Capitol Public Library</strong>
-            </div>
-          </div>
-        </Link>
+        <button
+          type="button"
+          className="login-close-button"
+          onClick={closeLogin}
+          aria-label="Close sign in"
+          title="Close sign in"
+        >
+          <X size={20} />
+        </button>
 
-        <div className="hero-content">
-          <h1>
-            Knowledge,
-            <br />
-            <span>organized.</span>
-          </h1>
-          <p>
-            Modern library management with passwordless patron access, barcode scanning,
-            and SMS notifications — designed for your library.
-          </p>
-        </div>
-
-        <div className="features">
-          <div className="feature-card">
-            <span>📖</span>
-            <strong>12K+ Titles</strong>
-          </div>
-          <div className="feature-card">
-            <span>▣</span>
-            <strong>Barcode Ready</strong>
-          </div>
-          <div className="feature-card">
-            <span>✉️</span>
-            <strong>Gmail Login</strong>
+        <div className="login-card-brand">
+          <img
+            src="/logo.webp"
+            alt="Misamis Oriental Provincial Capitol Public Library logo"
+            className="login-card-logo"
+          />
+          <div className="login-card-brand-text">
+            <span className="brand-sub">MISAMIS ORIENTAL</span>
+            <strong className="brand-title">Provincial Capitol Public Library</strong>
           </div>
         </div>
 
-        <div className="copyright">
-          <Link to="/" style={{ color: "#DCC7AA", textDecoration: "underline", marginRight: "1rem" }}>
-            ← Back to Landing Page
-          </Link>
-          © 2026 Misamis Oriental Provincial Capitol Public Library
-        </div>
-        </div>
-
-        {/* Right Login Form */}
-        <div className="login-right">
-          {overlay && (
-            <button
-              type="button"
-              className="login-close-button"
-              onClick={closeLogin}
-              aria-label="Close sign in"
-              title="Close sign in"
-            >
-              <X size={20} />
-            </button>
-          )}
-          <div className="login-container">
-            {!isForgotPassword ? (
+        <div className="login-container">
+          {!isForgotPassword ? (
               <>
                 <h2 className="login-title">User Login</h2>
                 <p className="login-description">
@@ -467,7 +435,6 @@ function Login({ overlay = false }) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
