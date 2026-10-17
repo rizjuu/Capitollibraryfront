@@ -22,6 +22,46 @@ import {
 } from "lucide-react";
 import "./Landing.css";
 
+// Curated keywords matching the most well-known, celebrated, and foundational library titles
+const MOST_KNOWN_KEYWORDS = [
+  "noli me tangere",
+  "el filibusterismo",
+  "la solidaridad",
+  "jose rizal",
+  "mga siday",
+  "civil code",
+  "labor code",
+  "philippines in the 6th",
+  "macapagal",
+  "barangay justice",
+  "guyton",
+  "robbins and cotran",
+  "brunner & suddarth",
+  "university physics",
+  "physics for scientists",
+  "molecular biology of the cell",
+  "biology: concepts",
+  "biology: an appreciation",
+  "principles of accounting",
+  "world almanac",
+  "chambers dictionary",
+  "next century mathematics",
+  "calculus and its applications",
+  "why things are",
+  "vision for a drug-free",
+  "the continuing revolution"
+];
+
+const isMostKnownBook = (book) => {
+  if (!book || !book.title) return false;
+  const title = book.title.toLowerCase();
+  const author = (book.author || "").toLowerCase();
+  return (
+    MOST_KNOWN_KEYWORDS.some((kw) => title.includes(kw) || author.includes(kw)) ||
+    Boolean(book.isFeatured || book.is_featured || book.popular)
+  );
+};
+
 export default function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -37,10 +77,6 @@ export default function Landing() {
 
   const handleHeroSearchSubmit = (e) => {
     if (e) e.preventDefault();
-    const directorySection = document.getElementById("directory");
-    if (directorySection) {
-      directorySection.scrollIntoView({ behavior: "smooth" });
-    }
   };
 
   const handleGetStarted = () => {
@@ -178,10 +214,20 @@ export default function Landing() {
     { id: "special", label: "⚖️ Special Collection & Law" }
   ];
 
-  const filteredLibraryBooks = libraryBooks.filter((book) => {
-    const query = searchQuery.trim().toLowerCase();
-    const searchableText = [book.title, book.author, book.category, book.section].filter(Boolean).join(" ").toLowerCase();
-    const matchesSearch = !query || searchableText.includes(query);
+  const newsHighlights = [
+    {
+      title: "Library adopts hybrid services for public access",
+      date: "Latest update",
+      summary:
+        "The Misamis Oriental Provincial Capitol Public Library is expanding access through a hybrid model that blends in-person services with digital support so residents, students, and researchers can continue learning and borrowing with greater flexibility.",
+      link: "https://pia.gov.ph/news/misamis-oriental-library-adopts-hybrid-services-for-public-access/"
+    }
+  ];
+
+  // Filter Library Collection showcase to ONLY the most known, famous & prominent books
+  const knownLibraryBooks = libraryBooks.filter((book) => {
+    if (!isMostKnownBook(book)) return false;
+
     const sec = String(book.section || "").toLowerCase();
     const cat = String(book.category || "").toLowerCase();
     const matchesCategory =
@@ -193,31 +239,66 @@ export default function Landing() {
       (activeCategory === "reference" && (sec.includes("reference") || sec.includes("theses") || cat.includes("reference"))) ||
       (activeCategory === "special" && (sec.includes("special") || sec.includes("law") || cat.includes("law") || cat.includes("governance") || cat.includes("peace")));
 
-    return matchesSearch && matchesCategory;
+    return matchesCategory;
   });
 
-  const visibleBookCount = Math.min(5, filteredLibraryBooks.length);
+  // Graceful fallback for specific categories that may have fewer explicitly listed known titles
+  const showcaseBooks = knownLibraryBooks.length > 0 ? knownLibraryBooks : libraryBooks.filter((book) => {
+    const sec = String(book.section || "").toLowerCase();
+    const cat = String(book.category || "").toLowerCase();
+    return (
+      activeCategory === "everything" ||
+      (activeCategory === "filipiniana" && (sec.includes("filipiniana") || cat.includes("filipiniana"))) ||
+      (activeCategory === "reserved" && (sec.includes("reserved") || sec.includes("m.r.") || cat.includes("medical"))) ||
+      (activeCategory === "periodical" && (sec.includes("periodical") || cat.includes("periodical") || cat.includes("journal"))) ||
+      (activeCategory === "circulation" && (sec.includes("circulation") || cat.includes("children") || /(fiction|literature|novel|science|mathematics)/.test(cat))) ||
+      (activeCategory === "reference" && (sec.includes("reference") || sec.includes("theses") || cat.includes("reference"))) ||
+      (activeCategory === "special" && (sec.includes("special") || sec.includes("law") || cat.includes("law") || cat.includes("governance") || cat.includes("peace")))
+    );
+  });
+
+  // Comprehensive catalog search results for home search entry
+  const catalogSearchResults = searchQuery.trim()
+    ? libraryBooks.filter((book) => {
+        const query = searchQuery.trim().toLowerCase();
+        const searchableText = [
+          book.title,
+          book.author,
+          Array.isArray(book.authors) ? book.authors.join(" ") : "",
+          book.category,
+          book.section,
+          book.shelf,
+          book.publisher,
+          book.barcode,
+          book.accessionNumber
+        ].filter(Boolean).join(" ").toLowerCase();
+
+        return searchableText.includes(query);
+      })
+    : [];
+
+  const visibleBookCount = Math.min(5, showcaseBooks.length);
   const visibleBooks = visibleBookCount
     ? Array.from({ length: visibleBookCount }, (_, index) => (
-        filteredLibraryBooks[(bookPreviewIndex + index) % filteredLibraryBooks.length]
+        showcaseBooks[(bookPreviewIndex + index) % showcaseBooks.length]
       ))
     : [];
 
   const advanceBookPreview = useCallback(() => {
-    if (filteredLibraryBooks.length > 1) {
-      setBookPreviewIndex((current) => (current + 1) % filteredLibraryBooks.length);
+    if (showcaseBooks.length > 1) {
+      setBookPreviewIndex((current) => (current + 1) % showcaseBooks.length);
     }
-  }, [filteredLibraryBooks.length]);
+  }, [showcaseBooks.length]);
 
   useEffect(() => {
     setBookPreviewIndex(0);
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory]);
 
   useEffect(() => {
-    if (filteredLibraryBooks.length <= 1) return undefined;
+    if (showcaseBooks.length <= 1) return undefined;
     const interval = setInterval(advanceBookPreview, 7000);
     return () => clearInterval(interval);
-  }, [advanceBookPreview, filteredLibraryBooks.length]);
+  }, [advanceBookPreview, showcaseBooks.length]);
 
   return (
     <div className="landing-container">
@@ -239,7 +320,7 @@ export default function Landing() {
 
         <div className="landing-nav-links">
           <a href="#hero" className="nav-link-item">Home</a>
-          <a href="#directory" className="nav-link-item">Catalog Directory</a>
+          <a href="#news" className="nav-link-item">News</a>
           <a href="#gallery" className="nav-link-item">Photo Gallery</a>
           <a href="#facilities" className="nav-link-item">Facilities</a>
           <a href="#location" className="nav-link-item">Location &amp; Hours</a>
@@ -310,27 +391,117 @@ export default function Landing() {
               </div>
 
               {searchQuery.trim() ? (
-                <div
-                  className="hero-search-count-badge"
-                  onClick={handleHeroSearchSubmit}
-                  role="button"
-                  tabIndex={0}
-                  title="Click to jump to catalog results"
-                >
-                  Found {filteredLibraryBooks.length} match{filteredLibraryBooks.length === 1 ? "" : "es"} in catalog &mdash; View results &darr;
+                <div className="hero-catalog-panel" role="region" aria-label="Library Catalog Search Results">
+                  <div className="hero-catalog-header">
+                    <div className="hero-catalog-title-group">
+                      <BookOpen size={18} style={{ color: "#6F4E37" }} />
+                      <span className="hero-catalog-badge">Library Catalog</span>
+                      <span className="hero-catalog-count">
+                        Found {catalogSearchResults.length} match{catalogSearchResults.length === 1 ? "" : "es"}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="hero-catalog-close-btn"
+                      onClick={() => setSearchQuery("")}
+                      aria-label="Close catalog search"
+                      title="Clear search"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  {catalogSearchResults.length > 0 ? (
+                    <div className="hero-catalog-list">
+                      {catalogSearchResults.map((book, index) => (
+                        <div
+                          key={`${book._id || book.barcode || book.title}-${index}`}
+                          className="hero-catalog-item"
+                          onClick={() => setSelectedCatalogBook(book)}
+                          role="button"
+                          tabIndex={0}
+                          title={`Click to view details for "${book.title}"`}
+                        >
+                          <div className="hero-catalog-item-cover">
+                            {book.coverUrl ? (
+                              <img src={book.coverUrl} alt="" />
+                            ) : (
+                              <BookOpen size={20} />
+                            )}
+                          </div>
+                          <div className="hero-catalog-item-info">
+                            <h4 className="hero-catalog-item-title">{book.title}</h4>
+                            <p className="hero-catalog-item-author">
+                              by {book.author || (Array.isArray(book.authors) && book.authors[0]) || "Unknown Author"}
+                            </p>
+                            <div className="hero-catalog-item-meta">
+                              {book.section && (
+                                <span className="hero-catalog-meta-pill section">
+                                  🏛️ {book.section.split("(")[0].trim()}
+                                </span>
+                              )}
+                              {book.category && (
+                                <span className="hero-catalog-meta-pill">
+                                  {book.category}
+                                </span>
+                              )}
+                              {book.shelf && (
+                                <span className="hero-catalog-meta-pill">
+                                  📍 {book.shelf}
+                                </span>
+                              )}
+                              <span
+                                className={`hero-catalog-meta-pill ${
+                                  book.available !== false ? "avail" : "borrowed"
+                                }`}
+                              >
+                                {book.available !== false ? "● Available" : "● Borrowed"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="hero-catalog-item-action">
+                            <span>View</span>
+                            <ArrowRight size={14} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="hero-catalog-empty">
+                      <div className="hero-catalog-empty-title">No books found in the library catalog</div>
+                      <div className="hero-catalog-empty-desc">
+                        No titles match &ldquo;{searchQuery}&rdquo;. Try searching by title keyword, author name, or subject.
+                      </div>
+                      <div className="hero-catalog-empty-suggestions">
+                        <span style={{ fontSize: "12px", color: "#8C7768", marginRight: "4px" }}>Suggestions:</span>
+                        {["Jose Rizal", "Filipiniana", "Mathematics", "Medicine", "Law"].map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            className="hero-catalog-suggest-chip"
+                            onClick={() => setSearchQuery(tag)}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="hero-catalog-footer">
+                    <span>Misamis Oriental Provincial Capitol Public Library &bull; OPAC</span>
+                    <span>Click any book to view full details</span>
+                  </div>
                 </div>
               ) : (
                 <div className="hero-search-entry-tags">
                   <span className="hero-search-tag-label">Popular:</span>
-                  {["Filipiniana", "History", "Science", "Periodical", "Law"].map((tag) => (
+                  {["Filipiniana", "Jose Rizal", "History", "Science", "Periodical", "Law"].map((tag) => (
                     <button
                       key={tag}
                       type="button"
                       className="hero-search-tag-chip"
-                      onClick={() => {
-                        setSearchQuery(tag);
-                        handleHeroSearchSubmit();
-                      }}
+                      onClick={() => setSearchQuery(tag)}
                     >
                       {tag}
                     </button>
@@ -400,26 +571,14 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* COLLECTION DIRECTORY SECTION */}
-      <section id="directory" className="directory-section landing-reveal">
+      {/* COLLECTION DIRECTORY SECTION - kept on the home view */}
+      <section className="directory-section landing-reveal">
         <div className="section-header-block landing-reveal">
           <div>
             <span className="section-eyebrow">Public Collection</span>
             <h2 className="section-main-title">
-              Library <span>Directory.</span>
+              Library <span>Collection.</span>
             </h2>
-          </div>
-
-          <div className="toolbar-search" style={{ width: "340px", position: "relative" }}>
-            <Search size={18} className="toolbar-search-icon" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#8C7768" }} />
-            <input
-              type="text"
-              className="toolbar-search-input"
-              style={{ width: "100%", height: "46px", paddingLeft: "42px", borderRadius: "14px", border: "1px solid #DCC7AA", fontSize: "13px" }}
-              placeholder="Search books, authors, or subjects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
           </div>
         </div>
 
@@ -440,14 +599,14 @@ export default function Landing() {
         <div className="catalog-showcase landing-reveal" aria-live="polite">
           <div className="catalog-showcase-heading">
             <div>
-              <span className="catalog-showcase-kicker">From the shelves</span>
+              <span className="catalog-showcase-kicker">Most Known &amp; Featured Titles</span>
               <h3>Explore the collection</h3>
             </div>
             <button
               type="button"
               className="catalog-showcase-next"
               onClick={advanceBookPreview}
-              disabled={filteredLibraryBooks.length <= 1}
+              disabled={showcaseBooks.length <= 1}
               aria-label="Show next books"
               title="Show next books"
             >
@@ -480,8 +639,64 @@ export default function Landing() {
               ))}
             </div>
           ) : (
-            <div className="catalog-showcase-empty">No books match this search or collection.</div>
+            <div className="catalog-showcase-empty">No books available in this collection.</div>
           )}
+        </div>
+      </section>
+
+      {/* NEWS & UPDATES SECTION */}
+      <section id="news" className="news-section landing-reveal">
+        <div className="section-header-block landing-reveal">
+          <div>
+            <span className="section-eyebrow">Latest News</span>
+            <h2 className="section-main-title">
+              Library <span>Updates.</span>
+            </h2>
+          </div>
+        </div>
+
+        <div className="news-featured-card">
+          <div className="news-featured-copy">
+            <span className="news-tag">Featured Story</span>
+            <h3>{newsHighlights[0].title}</h3>
+            <p className="news-date">{newsHighlights[0].date}</p>
+            <p>{newsHighlights[0].summary}</p>
+            <div className="news-actions">
+              <a
+                href={newsHighlights[0].link}
+                className="news-link-primary"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Read Full Story
+                <ArrowRight size={16} />
+              </a>
+            </div>
+          </div>
+
+          <div className="news-featured-aside">
+            <div className="news-aside-box">
+              <span className="news-aside-label">Public Access</span>
+              <strong>Hybrid service model</strong>
+              <p>Combining on-site library support with digital, convenient access for the public.</p>
+            </div>
+            <div className="news-aside-box">
+              <span className="news-aside-label">Community Impact</span>
+              <strong>More flexible learning</strong>
+              <p>Students, researchers, and residents can access information in a more responsive way.</p>
+            </div>
+
+            <div className="news-image-grid">
+              <div className="news-image-card">
+                <img src="/library.webp" alt="Library building exterior" />
+                <span>Library exterior</span>
+              </div>
+              <div className="news-image-card">
+                <img src="/mainreadinghall.webp" alt="Reading hall interior" />
+                <span>Reading hall</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
