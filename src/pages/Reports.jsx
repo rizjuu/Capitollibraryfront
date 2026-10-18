@@ -9,13 +9,16 @@ import {
   AlertCircle,
   Library,
   FileText,
-  BookCheck
+  BookCheck,
+  Table as TableIcon,
+  PieChart
 } from "lucide-react";
 import api from "../api";
 import DonutChart from "../components/DonutChart";
 
 function Reports({ showToast = () => {} }) {
   const [activeReport, setActiveReport] = useState("circulation");
+  const [statusViewMode, setStatusViewMode] = useState("table"); // "table" (default landscape) or "graph"
   const [circulation, setCirculation] = useState(null);
   const [overdue, setOverdue] = useState([]);
   const [inventory, setInventory] = useState(null);
@@ -163,6 +166,10 @@ function Reports({ showToast = () => {} }) {
     reservedCount = Math.max(0, totalTitlesCount - availableCount - borrowedCount);
   }
 
+  const availablePct = totalTitlesCount > 0 ? ((availableCount / totalTitlesCount) * 100).toFixed(1) : "0.0";
+  const borrowedPct = totalTitlesCount > 0 ? ((borrowedCount / totalTitlesCount) * 100).toFixed(1) : "0.0";
+  const reservedPct = totalTitlesCount > 0 ? ((reservedCount / totalTitlesCount) * 100).toFixed(1) : "0.0";
+
   const availabilityData = [
     { label: "Available", value: availableCount, color: "#16a34a" }, // Green
     { label: "Borrowed", value: borrowedCount, color: "#dc2626" }, // Red (Pula)
@@ -195,17 +202,466 @@ function Reports({ showToast = () => {} }) {
         </div>
       </div>
 
-      {/* Reports Circle Graph Section (Available: Green, Borrowed: Red/Pula, Reserved: Orange) */}
-      <div className="reports-analytics-overview-row" style={{ marginBottom: "22px" }}>
-        <div className="overview-chart-card" style={{ maxWidth: "560px" }}>
-          <div className="overview-chart-header">
-            <div className="overview-chart-icon-box green">
-              <BookCheck size={16} />
+      {/* Book Availability Status - Landscape Table */}
+      <div className="recent-transactions-card" style={{ marginBottom: "22px" }}>
+        <div
+          className="card-header-row"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--border)"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              className="overview-chart-icon-box green"
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(22, 163, 74, 0.15)",
+                color: "#16a34a"
+              }}
+            >
+              <BookCheck size={18} />
             </div>
-            <h3 className="overview-chart-title">Book Availability Status</h3>
+            <div>
+              <h3 className="card-header-title" style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>
+                Book Availability Status
+              </h3>
+              <p className="card-header-sub" style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
+                Landscape tabular report of collection holdings, live circulation status, and availability
+              </p>
+            </div>
           </div>
 
-          <div className="overview-chart-body">
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+            {/* Quick Metrics Chips */}
+            <div
+              style={{
+                padding: "4px 10px",
+                borderRadius: "8px",
+                backgroundColor: "rgba(22, 163, 74, 0.1)",
+                border: "1px solid rgba(22, 163, 74, 0.25)",
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#16a34a" }} />
+              <span style={{ color: "var(--text-muted)" }}>Available:</span>
+              <strong style={{ color: "#16a34a" }}>{availableCount}</strong>
+            </div>
+
+            <div
+              style={{
+                padding: "4px 10px",
+                borderRadius: "8px",
+                backgroundColor: "rgba(220, 38, 38, 0.1)",
+                border: "1px solid rgba(220, 38, 38, 0.25)",
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#dc2626" }} />
+              <span style={{ color: "var(--text-muted)" }}>Borrowed:</span>
+              <strong style={{ color: "#dc2626" }}>{borrowedCount}</strong>
+            </div>
+
+            <div
+              style={{
+                padding: "4px 10px",
+                borderRadius: "8px",
+                backgroundColor: "rgba(234, 88, 12, 0.1)",
+                border: "1px solid rgba(234, 88, 12, 0.25)",
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ea580c" }} />
+              <span style={{ color: "var(--text-muted)" }}>Reserved:</span>
+              <strong style={{ color: "#ea580c" }}>{reservedCount}</strong>
+            </div>
+
+            <div
+              style={{
+                padding: "4px 10px",
+                borderRadius: "8px",
+                backgroundColor: "var(--bg-elevated)",
+                border: "1px solid var(--border)",
+                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              <span style={{ color: "var(--text-muted)" }}>Total:</span>
+              <strong>{totalTitlesCount} titles</strong>
+            </div>
+
+            {/* View Mode Toggle Button */}
+            <div
+              style={{
+                display: "inline-flex",
+                borderRadius: "8px",
+                border: "1px solid var(--border)",
+                overflow: "hidden",
+                marginLeft: "4px"
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setStatusViewMode("table")}
+                title="Landscape Table View"
+                style={{
+                  padding: "5px 9px",
+                  fontSize: "12px",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  backgroundColor: statusViewMode === "table" ? "var(--color-primary)" : "transparent",
+                  color: statusViewMode === "table" ? "#ffffff" : "var(--text-muted)",
+                  fontWeight: statusViewMode === "table" ? 600 : 400
+                }}
+              >
+                <TableIcon size={14} />
+                Table
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusViewMode("graph")}
+                title="Circle Graph View"
+                style={{
+                  padding: "5px 9px",
+                  fontSize: "12px",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  backgroundColor: statusViewMode === "graph" ? "var(--color-primary)" : "transparent",
+                  color: statusViewMode === "graph" ? "#ffffff" : "var(--text-muted)",
+                  fontWeight: statusViewMode === "graph" ? 600 : 400
+                }}
+              >
+                <PieChart size={14} />
+                Graph
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {statusViewMode === "table" ? (
+          <>
+            {/* Visual Landscape Proportion Bar */}
+            <div style={{ padding: "16px 20px 8px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "6px",
+                  fontSize: "11px",
+                  color: "var(--text-muted)",
+                  fontWeight: "600",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em"
+                }}
+              >
+                <span>Collection Availability Distribution</span>
+                <span>{totalTitlesCount} Total Registered Books</span>
+              </div>
+              <div
+                style={{
+                  width: "100%",
+                  height: "12px",
+                  backgroundColor: "rgba(0,0,0,0.06)",
+                  borderRadius: "999px",
+                  overflow: "hidden",
+                  display: "flex"
+                }}
+              >
+                <div
+                  style={{
+                    width: `${totalTitlesCount > 0 ? (availableCount / totalTitlesCount) * 100 : 0}%`,
+                    backgroundColor: "#16a34a",
+                    transition: "width 0.4s ease"
+                  }}
+                  title={`Available: ${availableCount} (${availablePct}%)`}
+                />
+                <div
+                  style={{
+                    width: `${totalTitlesCount > 0 ? (borrowedCount / totalTitlesCount) * 100 : 0}%`,
+                    backgroundColor: "#dc2626",
+                    transition: "width 0.4s ease"
+                  }}
+                  title={`Borrowed: ${borrowedCount} (${borrowedPct}%)`}
+                />
+                <div
+                  style={{
+                    width: `${totalTitlesCount > 0 ? (reservedCount / totalTitlesCount) * 100 : 0}%`,
+                    backgroundColor: "#ea580c",
+                    transition: "width 0.4s ease"
+                  }}
+                  title={`Reserved: ${reservedCount} (${reservedPct}%)`}
+                />
+              </div>
+            </div>
+
+            {/* Landscape Table */}
+            <div className="table-container">
+              <table className="ui-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "160px" }}>STATUS</th>
+                    <th style={{ minWidth: "180px" }}>DISTRIBUTION BAR</th>
+                    <th style={{ width: "130px", textAlign: "right" }}>VOLUME (BOOKS)</th>
+                    <th style={{ width: "110px", textAlign: "right" }}>SHARE (%)</th>
+                    <th>OPERATIONAL CLASSIFICATION</th>
+                    <th style={{ width: "160px", textAlign: "center" }}>HOLDING STATE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Available Row */}
+                  <tr>
+                    <td>
+                      <span
+                        className="status-pill returned"
+                        style={{
+                          backgroundColor: "rgba(22, 163, 74, 0.15)",
+                          color: "#16a34a",
+                          fontWeight: 700
+                        }}
+                      >
+                        <span className="status-pill-dot" style={{ backgroundColor: "#16a34a" }} />
+                        AVAILABLE
+                      </span>
+                    </td>
+                    <td>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "8px",
+                          backgroundColor: "rgba(0,0,0,0.06)",
+                          borderRadius: "999px",
+                          overflow: "hidden"
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${availablePct}%`,
+                            height: "100%",
+                            backgroundColor: "#16a34a",
+                            borderRadius: "999px",
+                            transition: "width 0.4s ease"
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 700, fontSize: "14px" }}>
+                      {availableCount}
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 600, color: "#16a34a" }}>
+                      {availablePct}%
+                    </td>
+                    <td style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
+                      Shelved in library stacks, accessible for immediate patron borrow or on-site reading
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "#16a34a",
+                          backgroundColor: "rgba(22, 163, 74, 0.1)",
+                          padding: "4px 8px",
+                          borderRadius: "6px"
+                        }}
+                      >
+                        Ready to Loan
+                      </span>
+                    </td>
+                  </tr>
+
+                  {/* Borrowed Row */}
+                  <tr>
+                    <td>
+                      <span
+                        className="status-pill overdue"
+                        style={{
+                          backgroundColor: "rgba(220, 38, 38, 0.15)",
+                          color: "#dc2626",
+                          fontWeight: 700
+                        }}
+                      >
+                        <span className="status-pill-dot" style={{ backgroundColor: "#dc2626" }} />
+                        BORROWED
+                      </span>
+                    </td>
+                    <td>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "8px",
+                          backgroundColor: "rgba(0,0,0,0.06)",
+                          borderRadius: "999px",
+                          overflow: "hidden"
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${borrowedPct}%`,
+                            height: "100%",
+                            backgroundColor: "#dc2626",
+                            borderRadius: "999px",
+                            transition: "width 0.4s ease"
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 700, fontSize: "14px" }}>
+                      {borrowedCount}
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 600, color: "#dc2626" }}>
+                      {borrowedPct}%
+                    </td>
+                    <td style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
+                      Currently checked out by registered patrons with active loan schedules
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "#dc2626",
+                          backgroundColor: "rgba(220, 38, 38, 0.1)",
+                          padding: "4px 8px",
+                          borderRadius: "6px"
+                        }}
+                      >
+                        In Circulation
+                      </span>
+                    </td>
+                  </tr>
+
+                  {/* Reserved Row */}
+                  <tr>
+                    <td>
+                      <span
+                        className="status-pill active"
+                        style={{
+                          backgroundColor: "rgba(234, 88, 12, 0.15)",
+                          color: "#ea580c",
+                          fontWeight: 700
+                        }}
+                      >
+                        <span className="status-pill-dot" style={{ backgroundColor: "#ea580c" }} />
+                        RESERVED
+                      </span>
+                    </td>
+                    <td>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "8px",
+                          backgroundColor: "rgba(0,0,0,0.06)",
+                          borderRadius: "999px",
+                          overflow: "hidden"
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${reservedPct}%`,
+                            height: "100%",
+                            backgroundColor: "#ea580c",
+                            borderRadius: "999px",
+                            transition: "width 0.4s ease"
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 700, fontSize: "14px" }}>
+                      {reservedCount}
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 600, color: "#ea580c" }}>
+                      {reservedPct}%
+                    </td>
+                    <td style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
+                      Held at circulation counter for patron pick-up, cataloging, or maintenance
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "#ea580c",
+                          backgroundColor: "rgba(234, 88, 12, 0.1)",
+                          padding: "4px 8px",
+                          borderRadius: "6px"
+                        }}
+                      >
+                        On Hold
+                      </span>
+                    </td>
+                  </tr>
+
+                  {/* Total Collection Footer Row */}
+                  <tr style={{ backgroundColor: "var(--bg-elevated)", fontWeight: 700 }}>
+                    <td>
+                      <span style={{ fontSize: "13px", fontWeight: 800, color: "var(--text-primary)" }}>
+                        TOTAL COLLECTION
+                      </span>
+                    </td>
+                    <td>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "8px",
+                          backgroundColor: "var(--color-primary)",
+                          borderRadius: "999px"
+                        }}
+                      />
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 800, fontSize: "14px" }}>
+                      {totalTitlesCount}
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 800, color: "var(--color-primary)" }}>
+                      100.0%
+                    </td>
+                    <td style={{ color: "var(--text-muted)", fontSize: "12px" }}>
+                      Complete library inventory across all sections and classifications
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          color: "var(--text-primary)"
+                        }}
+                      >
+                        Full Catalog
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <div className="overview-chart-body" style={{ padding: "20px" }}>
             <div className="overview-donut-column">
               <DonutChart
                 size={148}
@@ -230,28 +686,7 @@ function Reports({ showToast = () => {} }) {
               ))}
             </div>
           </div>
-
-          <div className="membership-footer-metrics">
-            <div className="membership-footer-col">
-              <span className="membership-footer-value" style={{ color: "#16a34a" }}>
-                {availableCount}
-              </span>
-              <span className="membership-footer-label">Available</span>
-            </div>
-            <div className="membership-footer-col">
-              <span className="membership-footer-value" style={{ color: "#dc2626" }}>
-                {borrowedCount}
-              </span>
-              <span className="membership-footer-label">Borrowed</span>
-            </div>
-            <div className="membership-footer-col">
-              <span className="membership-footer-value" style={{ color: "#ea580c" }}>
-                {reservedCount}
-              </span>
-              <span className="membership-footer-label">Reserved</span>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Report Tabs */}

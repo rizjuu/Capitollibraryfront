@@ -9,6 +9,7 @@ import {
   Info,
   CheckCircle2,
   Loader2,
+  Bell,
 } from "lucide-react";
 import api from "../api";
 
@@ -17,6 +18,7 @@ function Circulation({ onTransactionComplete, showToast }) {
   const [borrowerName, setBorrowerName] = useState("");
   const [returnBarcode, setReturnBarcode] = useState("");
   const [loadingAction, setLoadingAction] = useState(null); // 'borrow' | 'return' | null
+  const [triggeringReminders, setTriggeringReminders] = useState(false);
 
   // 7-day default loan period
   const dueDateObj = new Date(Date.now() + 7 * 86400000);
@@ -92,17 +94,70 @@ function Circulation({ onTransactionComplete, showToast }) {
     }
   };
 
+  const handleTriggerReminders = async () => {
+    setTriggeringReminders(true);
+    try {
+      const response = await api.post("/sms/run-reminders");
+      const summary = response.data?.summary || {};
+      const sent2Days = summary.sent2DaysBefore || 0;
+      const sentOverdue = summary.sentOverdue || 0;
+      const totalSent = sent2Days + sentOverdue;
+
+      if (totalSent > 0) {
+        if (showToast) {
+          showToast(
+            `SMS Reminders Sent: ${sent2Days} upcoming (2 days before) & ${sentOverdue} overdue notices.`,
+            "success"
+          );
+        }
+      } else {
+        if (showToast) {
+          showToast(
+            `Checked ${summary.totalChecked || 0} active loan(s). All patrons are up to date!`,
+            "info"
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Failed to run reminders scan:", error);
+      if (showToast) {
+        showToast(
+          error.response?.data?.message || "Failed to trigger automated SMS reminders.",
+          "error"
+        );
+      }
+    } finally {
+      setTriggeringReminders(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, cubicBezier: [0.16, 1, 0.3, 1] }}
     >
-      <div className="page-title-row">
+      <div className="page-title-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <h1 className="page-title">Book Circulation</h1>
           <p className="page-subtitle">Borrow and return books using quick barcode lookup.</p>
         </div>
+
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={handleTriggerReminders}
+          disabled={triggeringReminders}
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 18px", borderRadius: "10px", fontSize: "13.5px" }}
+          title="Manually scan active loans and send SMS to patrons due in 2 days and overdue"
+        >
+          {triggeringReminders ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Bell size={16} />
+          )}
+          <span>{triggeringReminders ? "Scanning Loans..." : "Send SMS Due Reminders"}</span>
+        </button>
       </div>
 
       <div className="circ-grid">

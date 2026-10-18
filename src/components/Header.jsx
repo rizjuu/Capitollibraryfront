@@ -39,6 +39,65 @@ export default function Header({
   const [announcements, setAnnouncements] = useState([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
 
+  const notificationStorageKey = `mopl_seen_notifications_${user?._id || user?.id || "guest"}`;
+  const [seenNotificationIds, setSeenNotificationIds] = useState(() => {
+    try {
+      const key = `mopl_seen_notifications_${user?._id || user?.id || "guest"}`;
+      return JSON.parse(localStorage.getItem(key) || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  // Keep seen IDs in sync when user logs in / changes
+  useEffect(() => {
+    try {
+      const key = `mopl_seen_notifications_${user?._id || user?.id || "guest"}`;
+      const stored = JSON.parse(localStorage.getItem(key) || "[]");
+      setSeenNotificationIds(stored);
+    } catch {
+      setSeenNotificationIds([]);
+    }
+  }, [user?._id, user?.id]);
+
+  // Compute unread announcements count
+  const unreadCount = announcements.filter((item) => {
+    const id = String(item._id || item.id || `${item.title}-${item.createdAt}`);
+    return !seenNotificationIds.includes(id);
+  }).length;
+
+  // Mark all notifications as seen so the badge disappears
+  const markAllAsSeen = () => {
+    if (!announcements || announcements.length === 0) return;
+    const allIds = announcements.map((item) =>
+      String(item._id || item.id || `${item.title}-${item.createdAt}`)
+    );
+    const updated = Array.from(new Set([...seenNotificationIds, ...allIds]));
+    setSeenNotificationIds(updated);
+    try {
+      localStorage.setItem(notificationStorageKey, JSON.stringify(updated));
+    } catch (e) {
+      console.error("Failed to persist seen notifications", e);
+    }
+  };
+
+  const handleToggleNotifications = () => {
+    setNotificationsOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        markAllAsSeen();
+      }
+      return next;
+    });
+  };
+
+  // If panel is currently open and announcements arrive/update, clear badge immediately
+  useEffect(() => {
+    if (notificationsOpen && announcements.length > 0) {
+      markAllAsSeen();
+    }
+  }, [notificationsOpen, announcements]);
+
   // Post Announcement Modal state (for admin/staff)
   const [showPostModal, setShowPostModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -210,11 +269,11 @@ export default function Header({
             className={`btn-icon-only ${notificationsOpen ? "active" : ""}`}
             aria-label="Notifications"
             title="Announcements & Notifications"
-            onClick={() => setNotificationsOpen((prev) => !prev)}
+            onClick={handleToggleNotifications}
           >
             <Bell size={20} className="w-5 h-5" />
-            {announcements.length > 0 && (
-              <span className="notification-badge-count">{announcements.length}</span>
+            {unreadCount > 0 && (
+              <span className="notification-badge-count">{unreadCount}</span>
             )}
           </button>
 

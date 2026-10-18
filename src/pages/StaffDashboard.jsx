@@ -12,7 +12,7 @@ import Profile from "./Profile";
 import ToastContainer from "../components/ToastContainer";
 import { useAuth } from "../context/AuthContext";
 import api from "../api";
-import { Users, GraduationCap, Home, Phone, MapPin, Building, X, Eye } from "lucide-react";
+import { Users, GraduationCap, Home, Phone, MapPin, Building, X, Eye, Trash2 } from "lucide-react";
 
 function StaffDashboard() {
   const { theme, toggleTheme } = useAuth();
@@ -92,6 +92,26 @@ function StaffDashboard() {
       console.error("Failed to load patrons", err);
     } finally {
       setLoadingPatrons(false);
+    }
+  };
+
+  const handleDeletePatron = async (patronToDelete) => {
+    if (!patronToDelete) return;
+    const confirmMsg = `Are you sure you want to permanently delete patron "${patronToDelete.name}"?\n\nThis will remove their library account. This action cannot be undone.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await api.delete(`/users/${patronToDelete._id}`);
+      showToast(res.data?.message || "Patron deleted successfully.", "success");
+      if (selectedPatron && selectedPatron._id === patronToDelete._id) {
+        setShowPatronDetailModal(false);
+        setSelectedPatron(null);
+      }
+      fetchPatrons();
+      fetchDashboardStats();
+    } catch (err) {
+      console.error("Error deleting patron:", err);
+      showToast(err.response?.data?.message || "Failed to delete patron", "error");
     }
   };
 
@@ -294,18 +314,36 @@ function StaffDashboard() {
                               </span>
                             </td>
                             <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={() => {
-                                  setSelectedPatron(p);
-                                  setShowPatronDetailModal(true);
-                                }}
-                                style={{ padding: "4px 8px", fontSize: "12px" }}
-                              >
-                                <Eye size={14} />
-                                View
-                              </button>
+                              <div style={{ display: "inline-flex", gap: "6px" }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  onClick={() => {
+                                    setSelectedPatron(p);
+                                    setShowPatronDetailModal(true);
+                                  }}
+                                  style={{ padding: "4px 8px", fontSize: "12px" }}
+                                >
+                                  <Eye size={14} />
+                                  View
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  onClick={() => handleDeletePatron(p)}
+                                  title="Delete Patron"
+                                  style={{
+                                    padding: "4px 8px",
+                                    fontSize: "12px",
+                                    backgroundColor: "rgba(239, 68, 68, 0.12)",
+                                    color: "var(--color-destructive, #dc2626)",
+                                    borderColor: "rgba(239, 68, 68, 0.3)"
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                  Delete
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -422,7 +460,20 @@ function StaffDashboard() {
                     <div style={{ fontSize: "13px", fontWeight: "500", marginTop: "2px" }}>{selectedPatron.email || "No email"}</div>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => handleDeletePatron(selectedPatron)}
+                      style={{
+                        backgroundColor: "rgba(239, 68, 68, 0.12)",
+                        color: "var(--color-destructive, #dc2626)",
+                        borderColor: "rgba(239, 68, 68, 0.3)"
+                      }}
+                    >
+                      <Trash2 size={15} />
+                      Delete Patron
+                    </button>
                     <button type="button" className="btn btn-primary" onClick={() => setShowPatronDetailModal(false)}>
                       Close
                     </button>
