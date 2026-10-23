@@ -490,7 +490,13 @@ function PatronDashboard() {
         )}
 
         {activeTab === "books" && (
-          <Catalog books={books} loading={loadingBooks} isPatronView={true} />
+          <Catalog
+            books={books}
+            loading={loadingBooks}
+            isPatronView={true}
+            onBookUpdated={fetchBooks}
+            showToast={showToast}
+          />
         )}
 
 

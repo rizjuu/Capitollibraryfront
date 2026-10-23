@@ -156,7 +156,7 @@ function AdminDashboard() {
         )}
 
         {activeTab === "generate-barcode" && (
-          <BarcodeGenerator showToast={showToast} />
+          <BarcodeGenerator showToast={showToast} books={books} onNavigateToCatalog={() => setActiveTab("books")} />
         )}
 
         {activeTab === "circulation" && (
@@ -165,6 +165,7 @@ function AdminDashboard() {
               handleRefreshAll();
             }}
             showToast={showToast}
+            books={books}
           />
         )}
 

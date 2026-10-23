@@ -126,7 +126,7 @@ export function getPageHeaderInfo(activeTab = "dashboard", role = "admin", user 
         emoji: "📚",
         subtitle: isPatron
           ? "Search and explore books available to borrow across all collections."
-          : "Search and filter books by Category, Shelf Location, Availability, and Publication Decade.",
+          : "Search and filter books by Library Section, Category, Shelf Location, and Availability.",
         category: isPatron ? "Catalog & Loans" : "Catalog & Inventory",
       };
     case "circulation":

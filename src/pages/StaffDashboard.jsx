@@ -187,6 +187,7 @@ function StaffDashboard() {
           <Circulation
             onTransactionComplete={fetchBooks}
             showToast={showToast}
+            books={books}
           />
         )}
 
@@ -204,7 +205,7 @@ function StaffDashboard() {
         {activeTab === "reports" && <Reports showToast={showToast} />}
 
         {activeTab === "generate-barcode" && (
-          <BarcodeGenerator showToast={showToast} />
+          <BarcodeGenerator showToast={showToast} books={books} onNavigateToCatalog={() => setActiveTab("books")} />
         )}
 
         {activeTab === "add-book" && (
