@@ -327,10 +327,22 @@ export default function Landing() {
         </div>
 
         <div className="landing-header-actions">
-          <div className="header-status-badge">
-            <span className="ping-dot"></span>
-            Library is Open: 8:00 AM - 5:00 PM
-          </div>
+          <a
+            href="https://www.facebook.com/MisamisOrientalProvicialLibrary"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="header-facebook-btn"
+            title="Follow Misamis Oriental Provincial Library on Facebook"
+            aria-label="Misamis Oriental Provincial Library Facebook Page"
+          >
+            <svg width="36" height="36" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="12" fill="#1877F2" />
+              <path
+                d="M15.12 12.55l.48-3.15h-3.03V7.35c0-.86.42-1.7 1.77-1.7h1.37V2.97s-1.24-.21-2.43-.21c-2.48 0-4.1 1.5-4.1 4.23v2.41H6.4v3.15h2.78V20.2c.56.09 1.13.14 1.71.14s1.15-.05 1.71-.14v-7.65h2.52z"
+                fill="#ffffff"
+              />
+            </svg>
+          </a>
 
           {user ? (
             <button className="nav-btn-signin" onClick={handleGetStarted}>
@@ -549,24 +561,6 @@ export default function Landing() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* STATS SECTION - Magic Link box removed per request */}
-      <section className="stats-section landing-reveal">
-        <div className="stats-grid-container">
-          <div className="stat-item-box">
-            <span className="stat-number-text">12,000+</span>
-            <span className="stat-label-text">Books &amp; Publications</span>
-          </div>
-          <div className="stat-item-box">
-            <span className="stat-number-text">24/7</span>
-            <span className="stat-label-text">Digital Catalog Access</span>
-          </div>
-          <div className="stat-item-box">
-            <span className="stat-number-text">SMS</span>
-            <span className="stat-label-text">Automated Due Alerts</span>
           </div>
         </div>
       </section>
@@ -916,6 +910,25 @@ export default function Landing() {
                 <p>Phone: (088) 856-1234 | Email: library@misamisoriental.gov.ph</p>
               </div>
             </div>
+
+            <div className="info-row-item">
+              <div className="info-icon-box" style={{ backgroundColor: "rgba(24, 119, 242, 0.12)", color: "#1877F2" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </div>
+              <div className="info-row-text">
+                <h4>Official Facebook</h4>
+                <a
+                  href="https://www.facebook.com/MisamisOrientalProvicialLibrary"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#2563eb", textDecoration: "none", fontWeight: "600", fontSize: "13.5px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  facebook.com/MisamisOrientalProvicialLibrary ↗
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Embedded Google Map Frame */}
@@ -939,6 +952,18 @@ export default function Landing() {
             <p>
               The official Provincial Capitol Public Library of Misamis Oriental. Dedicated to serving citizens, students, and researchers with comprehensive physical and digital learning resources.
             </p>
+            <a
+              href="https://www.facebook.com/MisamisOrientalProvicialLibrary"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-facebook-badge"
+              title="Visit Official Facebook Page"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+              </svg>
+              <span>Follow on Facebook</span>
+            </a>
           </div>
 
           <div className="footer-col">
@@ -953,6 +978,14 @@ export default function Landing() {
             <p>Capitol Compound, Cagayan de Oro City</p>
             <p>(088) 856-1234</p>
             <p>library@misamisoriental.gov.ph</p>
+            <a
+              href="https://www.facebook.com/MisamisOrientalProvicialLibrary"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              Official Facebook Page ↗
+            </a>
           </div>
         </div>
 

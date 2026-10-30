@@ -21,8 +21,7 @@ import {
   MapPin,
   Building,
   Hash,
-  UserCheck,
-  Trash2
+  UserCheck
 } from "lucide-react";
 import api from "../api";
 
@@ -220,29 +219,6 @@ export default function PatronManagement({ showToast }) {
     } catch (err) {
       console.error("Error toggling status:", err);
       showToast(err.response?.data?.message || "Failed to change patron status", "error");
-    }
-  };
-
-  // Delete User (Patron or Staff) Handler
-  const handleDeleteUser = async (userToDelete) => {
-    if (!userToDelete) return;
-    const roleLabel = userToDelete.role === "staff" ? "Staff member" : userToDelete.role === "admin" ? "Admin" : "Patron";
-    const confirmMsg = `Are you sure you want to permanently delete ${roleLabel} "${userToDelete.name}"?\n\nThis will remove their account from the system. This action cannot be undone.`;
-    if (!window.confirm(confirmMsg)) return;
-
-    try {
-      const res = await api.delete(`/users/${userToDelete._id}`);
-      showToast(res.data?.message || `${roleLabel} deleted successfully.`, "success");
-      if (selectedUser && selectedUser._id === userToDelete._id) {
-        setShowDetailModal(false);
-        setShowEditModal(false);
-        setShowHistoryModal(false);
-        setSelectedUser(null);
-      }
-      fetchUsers();
-    } catch (err) {
-      console.error("Error deleting user:", err);
-      showToast(err.response?.data?.message || `Failed to delete ${roleLabel.toLowerCase()}`, "error");
     }
   };
 
@@ -555,26 +531,6 @@ export default function PatronManagement({ showToast }) {
                               History
                             </button>
                           )}
-
-                          {/* Delete Button */}
-                          {u.role !== "admin" && (
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              onClick={() => handleDeleteUser(u)}
-                              title={`Delete ${u.role === "staff" ? "Staff Member" : "Patron"}`}
-                              style={{
-                                padding: "6px 10px",
-                                fontSize: "12px",
-                                backgroundColor: "rgba(239, 68, 68, 0.12)",
-                                color: "var(--color-destructive, #dc2626)",
-                                border: "1px solid rgba(239, 68, 68, 0.3)"
-                              }}
-                            >
-                              <Trash2 size={14} />
-                              Delete
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -796,42 +752,25 @@ export default function PatronManagement({ showToast }) {
             </div>
 
             {/* Modal Actions */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", paddingTop: "10px", borderTop: "1px solid var(--border)" }}>
-              {selectedUser.role !== "admin" ? (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => handleDeleteUser(selectedUser)}
-                  style={{
-                    backgroundColor: "rgba(239, 68, 68, 0.12)",
-                    color: "var(--color-destructive, #dc2626)",
-                    borderColor: "rgba(239, 68, 68, 0.3)"
-                  }}
-                >
-                  <Trash2 size={16} />
-                  Delete {selectedUser.role === "staff" ? "Staff" : "Patron"}
-                </button>
-              ) : <div />}
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    openEditModal(selectedUser);
-                  }}
-                >
-                  <Edit size={16} />
-                  Edit Details
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => setShowDetailModal(false)}
-                >
-                  Close
-                </button>
-              </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "10px", paddingTop: "10px", borderTop: "1px solid var(--border)" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowDetailModal(false);
+                  openEditModal(selectedUser);
+                }}
+              >
+                <Edit size={16} />
+                Edit Details
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowDetailModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
