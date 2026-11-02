@@ -11,9 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Landing from "./pages/Landing";
 import Login from "./pages/login";
 
-// Code-split heavy dashboard views to keep initial landing bundle minimal
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const StaffDashboard = lazy(() => import("./pages/StaffDashboard"));
+// Code-split patron dashboard to keep initial landing bundle minimal
 const PatronDashboard = lazy(() => import("./pages/PatronDashboard"));
 
 function PageLoadingFallback() {
@@ -65,30 +63,6 @@ function App() {
                 <Landing />
                 <Login overlay />
               </>
-            }
-          />
-
-          {/* Protected Admin Dashboard */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <AdminDashboard />
-                </Suspense>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Protected Staff Dashboard */}
-          <Route
-            path="/staff"
-            element={
-              <ProtectedRoute allowedRoles={["staff"]}>
-                <Suspense fallback={<PageLoadingFallback />}>
-                  <StaffDashboard />
-                </Suspense>
-              </ProtectedRoute>
             }
           />
 

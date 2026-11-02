@@ -14,13 +14,9 @@ function Login({ overlay = false }) {
 
   useEffect(() => {
     if (!user) return;
-    const dashboardRoute =
-      user.role === "admin"
-        ? "/admin"
-        : user.role === "staff"
-          ? "/staff"
-          : "/patron";
-    navigate(dashboardRoute, { replace: true });
+    if (user.role === "patron") {
+      navigate("/patron", { replace: true });
+    }
   }, [user, navigate]);
 
   useEffect(() => {
@@ -55,25 +51,18 @@ function Login({ overlay = false }) {
     setLoading(true);
 
     try {
-      const response = await api.post("/auth/login", {
+      const response = await api.post("/auth/patron-login", {
         username,
         password
       });
 
       const { token, user: loggedUser } = response.data;
       login(loggedUser, token, true);
-
-      if (loggedUser.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else if (loggedUser.role === "staff") {
-        navigate("/staff", { replace: true });
-      } else {
-        navigate("/patron", { replace: true });
-      }
+      navigate("/patron", { replace: true });
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Authentication failed. Please check your credentials."
+        "Invalid username or password. Please check your credentials."
       );
     } finally {
       setLoading(false);
@@ -203,9 +192,9 @@ function Login({ overlay = false }) {
         <div className="login-container">
           {!isForgotPassword ? (
               <>
-                <h2 className="login-title">User Login</h2>
+                <h2 className="login-title">Patron Sign In</h2>
                 <p className="login-description">
-                  Enter your library credentials to access your account.
+                  Access your patron account, borrow records, and catalog reservations.
                 </p>
 
                 {error && <div className="login-error">{error}</div>}

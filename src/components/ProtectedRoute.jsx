@@ -9,14 +9,7 @@ export default function ProtectedRoute({ allowedRoles, children }) {
   useEffect(() => {
     if (!user) return;
 
-    const roleRoute =
-      user.role === "admin"
-        ? "/admin"
-        : user.role === "staff"
-          ? "/staff"
-          : user.role === "patron"
-            ? "/patron"
-            : "/login";
+    const roleRoute = user.role === "patron" ? "/patron" : "/login";
 
     const blockBackNavigation = () => {
       window.history.pushState(null, "", roleRoute);
@@ -61,10 +54,6 @@ export default function ProtectedRoute({ allowedRoles, children }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect user to their own role dashboard if trying to access unauthorized route
-    if (user.role === "admin") return <Navigate to="/admin" replace />;
-    if (user.role === "staff") return <Navigate to="/staff" replace />;
-    if (user.role === "patron") return <Navigate to="/patron" replace />;
     return <Navigate to="/login" replace />;
   }
 

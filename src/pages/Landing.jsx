@@ -81,13 +81,7 @@ export default function Landing() {
 
   const handleGetStarted = () => {
     if (user) {
-      const dest =
-        user.role === "admin"
-          ? "/admin"
-          : user.role === "staff"
-            ? "/staff"
-            : "/patron";
-      navigate(dest);
+      navigate("/patron");
     } else {
       navigate("/login");
     }
@@ -525,18 +519,18 @@ export default function Landing() {
             <div className="hero-cta-group">
               {user ? (
                 <button onClick={handleGetStarted} className="btn-cta-primary">
-                  Open Dashboard
+                  Open My Dashboard
                   <ArrowRight size={18} />
                 </button>
               ) : (
                 <>
-                  <Link to="/login?tab=patron" className="btn-cta-primary">
-                    Patron Access
+                  <Link to="/login" className="btn-cta-primary">
+                    Patron Sign In
                     <ArrowRight size={18} />
                   </Link>
-                  <Link to="/login?tab=staff" className="btn-cta-secondary">
-                    Staff / Admin Sign-In
-                  </Link>
+                  <a href="#featured-collection" className="btn-cta-secondary">
+                    Browse Catalog
+                  </a>
                 </>
               )}
             </div>
