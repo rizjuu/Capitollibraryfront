@@ -3,6 +3,7 @@ import {
   AtSign,
   CheckCircle2,
   Loader2,
+  Lock,
   Phone,
   Save,
   ShieldCheck,
@@ -15,6 +16,7 @@ import {
 import { motion } from "framer-motion";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
+import { formatPatronId } from "../utils/patronUtils";
 
 function Profile({ showToast = () => {} }) {
   const { user, updateUser } = useAuth();
@@ -104,7 +106,8 @@ function Profile({ showToast = () => {} }) {
         phone: profile.phone ? profile.phone.trim() : "",
         address: profile.address ? profile.address.trim() : "",
         age: profile.age ? parseInt(profile.age, 10) : null,
-        patronType: profile.patronType,
+        // Only send patronType if profile hasn't been completed yet (classification is permanent after first save)
+        ...(currentAccount.isProfileCompleted ? {} : { patronType: profile.patronType }),
         school: profile.patronType === "student" ? (profile.school || "").trim() : "",
         yearLevel: profile.patronType === "student" ? (profile.yearLevel || "").trim() : "",
         isProfileCompleted: true
@@ -143,7 +146,20 @@ function Profile({ showToast = () => {} }) {
             </div>
 
             <div className="form-grid-2col" style={{ marginBottom: "24px" }}>
-              <div className="form-group"><label className="form-label">Username / Identifier</label><div className="form-readonly">{currentAccount.username || currentAccount.email || "Not set"}</div></div>
+              <div className="form-group">
+                <label className="form-label">Patron ID / Cardholder ID</label>
+                <div
+                  className="form-readonly"
+                  style={{
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    color: "var(--color-primary)",
+                    fontFamily: "var(--font-mono, monospace)"
+                  }}
+                >
+                  {formatPatronId(currentAccount)}
+                </div>
+              </div>
               <div className="form-group"><label className="form-label">Membership Role</label><div className="form-readonly">Registered Patron</div></div>
               <div className="form-group"><label className="form-label">Account Status</label><div className="form-readonly" style={{ color: "var(--color-success)" }}><CheckCircle2 size={16} /> {currentAccount.status || "Active"}</div></div>
               <div className="form-group"><label className="form-label">Classification</label><div className="form-readonly">{profile.patronType === "student" ? "🎓 Student" : "🏡 Resident"}</div></div>
@@ -245,26 +261,75 @@ function Profile({ showToast = () => {} }) {
                 <label className="form-label" style={{ marginBottom: "8px" }}>
                   Patron Classification
                 </label>
-                <div style={{ display: "flex", gap: "10px", maxWidth: "400px" }}>
-                  <button
-                    type="button"
-                    className={`btn ${profile.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
-                    onClick={() => setProfile({ ...profile, patronType: "student" })}
-                    style={{ flex: 1, justifyContent: "center" }}
-                  >
-                    <GraduationCap size={16} />
-                    Student
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${profile.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
-                    onClick={() => setProfile({ ...profile, patronType: "resident" })}
-                    style={{ flex: 1, justifyContent: "center" }}
-                  >
-                    <Home size={16} />
-                    Resident
-                  </button>
-                </div>
+
+                {currentAccount.isProfileCompleted ? (
+                  /* LOCKED — classification is permanent after first registration */
+                  <div>
+                    <div style={{ display: "flex", gap: "10px", maxWidth: "400px", marginBottom: "8px" }}>
+                      <button
+                        type="button"
+                        disabled
+                        className={`btn ${profile.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
+                        style={{
+                          flex: 1,
+                          justifyContent: "center",
+                          opacity: profile.patronType === "student" ? 1 : 0.35,
+                          cursor: "not-allowed"
+                        }}
+                      >
+                        <GraduationCap size={16} />
+                        Student
+                      </button>
+                      <button
+                        type="button"
+                        disabled
+                        className={`btn ${profile.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
+                        style={{
+                          flex: 1,
+                          justifyContent: "center",
+                          opacity: profile.patronType === "resident" ? 1 : 0.35,
+                          cursor: "not-allowed"
+                        }}
+                      >
+                        <Home size={16} />
+                        Resident
+                      </button>
+                    </div>
+                    <p style={{
+                      fontSize: "12px",
+                      color: "var(--text-muted)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      margin: 0
+                    }}>
+                      <Lock size={12} />
+                      Patron classification is permanent and cannot be changed after registration.
+                    </p>
+                  </div>
+                ) : (
+                  /* UNLOCKED — patron hasn't completed profile yet */
+                  <div style={{ display: "flex", gap: "10px", maxWidth: "400px" }}>
+                    <button
+                      type="button"
+                      className={`btn ${profile.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
+                      onClick={() => setProfile({ ...profile, patronType: "student" })}
+                      style={{ flex: 1, justifyContent: "center" }}
+                    >
+                      <GraduationCap size={16} />
+                      Student
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${profile.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
+                      onClick={() => setProfile({ ...profile, patronType: "resident" })}
+                      style={{ flex: 1, justifyContent: "center" }}
+                    >
+                      <Home size={16} />
+                      Resident
+                    </button>
+                  </div>
+                )}
 
                 {/* Student Academic Details */}
                 {profile.patronType === "student" && (

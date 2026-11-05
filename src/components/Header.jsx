@@ -15,6 +15,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getPageHeaderInfo } from "../utils/navigationConfig";
 import api from "../api";
+import { formatPatronId } from "../utils/patronUtils";
 
 export default function Header({
   activeTab = "dashboard",
@@ -291,11 +292,16 @@ export default function Header({
                   marginBottom: "4px",
                 }}
               >
-                <p style={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary, #4B3832)", margin: 0 }}>
-                  {displayName}
-                </p>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
+                  <p style={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary, #4B3832)", margin: 0 }}>
+                    {displayName}
+                  </p>
+                  <span className="id-chip" style={{ fontSize: "10px", fontWeight: 700, padding: "1px 6px" }}>
+                    {formatPatronId(user)}
+                  </span>
+                </div>
                 <p style={{ fontSize: "11px", color: "var(--text-muted, #8C7768)", margin: "2px 0 0" }}>
-                  {user?.email || user?.username || displayRole}
+                  {user?.email || formatPatronId(user)}
                 </p>
               </div>
 

@@ -269,7 +269,7 @@ function Catalog({
           <input
             type="text"
             className="toolbar-search-input"
-            placeholder="Search by title, author, section, ISBN..."
+            placeholder="Search by title, author, section..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -479,67 +479,35 @@ function Catalog({
                   <p className="book-author">by {displayAuthor}</p>
                 </div>
 
-                <div>
-                  <div className="book-meta-rows">
-                    {book.section && (
-                      <div className="book-meta-row">
-                        <span className="book-meta-label">Section</span>
-                        <span
-                          className="book-meta-value clickable-section-tag"
-                          style={{
-                            fontWeight: 600,
-                            color: "var(--color-primary)",
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                            textUnderlineOffset: "2px"
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSectionChange(stripParentheses(book.section));
-                          }}
-                          title={`Click to filter catalog by ${stripParentheses(book.section)}`}
-                        >
-                          {stripParentheses(book.section)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="book-meta-row">
-                      <span className="book-meta-label">Category</span>
-                      <span className="book-meta-value">{book.category || "General"}</span>
-                    </div>
-
-                    <div className="book-meta-row">
-                      <span className="book-meta-label">Shelf Location</span>
-                      <span className="book-meta-value">{book.shelf || "N/A"}</span>
-                    </div>
-
-                    <div className="book-meta-row">
-                      <span className="book-meta-label">Publisher</span>
-                      <span className="book-meta-value">{book.publisher || "N/A"}</span>
-                    </div>
-
-                    <div className="book-meta-row">
-                      <span className="book-meta-label">Pub Year</span>
-                      <span className="book-meta-value">
-                        {book.publicationYear || "N/A"}
-                      </span>
-                    </div>
-
-                    {book.isbn && (
-                      <div className="book-meta-row">
-                        <span className="book-meta-label">ISBN</span>
-                        <span className="book-meta-value">{book.isbn}</span>
-                      </div>
-                    )}
-
-                    <div className="book-meta-row">
-                      <span className="book-meta-label">Date Added</span>
-                      <span className="book-meta-value" style={{ fontSize: "12.5px", color: "var(--text-muted)" }}>
-                        {formatDate(book.dateAdded || book.createdAt)}
-                      </span>
-                    </div>
-                  </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginTop: "10px"
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "var(--color-primary)",
+                      backgroundColor: "rgba(111, 78, 55, 0.08)",
+                      padding: "3px 8px",
+                      borderRadius: "6px"
+                    }}
+                  >
+                    {stripParentheses(book.section) || book.category || "General"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--text-muted)"
+                    }}
+                  >
+                    View details →
+                  </span>
                 </div>
 
                 {/* Patron Reserve Action Button */}

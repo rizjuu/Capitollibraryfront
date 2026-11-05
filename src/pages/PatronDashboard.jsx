@@ -32,6 +32,7 @@ import {
   User
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { formatPatronId } from "../utils/patronUtils";
 
 function PatronDashboard() {
   const { user, updateUser, theme, toggleTheme } = useAuth();
@@ -399,7 +400,22 @@ function PatronDashboard() {
                   <LayoutGrid size={22} />
                 </div>
                 <div>
-                  <h1 className="dashboard-welcome-title">Hello, {displayName}!</h1>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                    <h1 className="dashboard-welcome-title" style={{ margin: 0 }}>Hello, {displayName}!</h1>
+                    <span
+                      className="id-chip"
+                      style={{
+                        fontWeight: 700,
+                        letterSpacing: "0.05em",
+                        fontSize: "12px",
+                        color: "var(--color-primary)",
+                        padding: "3px 10px"
+                      }}
+                      title="Your official Patron ID"
+                    >
+                      {formatPatronId(user)}
+                    </span>
+                  </div>
                   <p className="dashboard-welcome-subtitle">Your library overview</p>
                 </div>
               </div>
@@ -1000,14 +1016,28 @@ function PatronDashboard() {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "6px",
+                    gap: "8px",
                     fontSize: "12px",
                     color: "var(--text-muted)",
                     fontWeight: "500"
                   }}
                 >
-                  <ShieldCheck size={14} style={{ color: "var(--color-primary)" }} />
-                  <span>Patron Account Verification</span>
+                  <span
+                    className="id-chip"
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      letterSpacing: "0.05em",
+                      color: "var(--color-primary)",
+                      padding: "2px 8px"
+                    }}
+                  >
+                    {formatPatronId(user)}
+                  </span>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    <ShieldCheck size={14} style={{ color: "var(--color-primary)" }} />
+                    <span>Account Verification</span>
+                  </div>
                 </div>
               </div>
 
@@ -1293,6 +1323,19 @@ function PatronDashboard() {
                     <span>Resident Patron</span>
                   </button>
                 </div>
+                {/* Permanent classification warning */}
+                <p style={{
+                  fontSize: "11.5px",
+                  color: "#B45309",
+                  marginTop: "9px",
+                  marginBottom: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px"
+                }}>
+                  <AlertCircle size={12} />
+                  This classification cannot be changed after registration.
+                </p>
               </div>
 
               {/* Conditional Student Information */}
