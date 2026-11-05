@@ -1,18 +1,15 @@
-import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
-  Bell,
+  Menu,
   Sun,
   Moon,
-  Menu,
+  Bell,
   ChevronDown,
   LogOut,
-  Megaphone,
-  Plus,
-  Trash2,
   Calendar,
-  X,
-  Loader2
+  Loader2,
+  Megaphone,
+  X
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -20,66 +17,47 @@ import { getPageHeaderInfo } from "../utils/navigationConfig";
 import api from "../api";
 
 export default function Header({
-  theme = "light",
-  onToggleTheme = () => {},
-  onToggleMobileMenu = () => {},
   activeTab = "dashboard",
-  showToast = () => {},
+  onToggleMobileMenu,
+  theme,
+  onToggleTheme,
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // User dropdown state
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // Notifications / Announcements state
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const notificationsRef = useRef(null);
   const [announcements, setAnnouncements] = useState([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
 
-  const notificationStorageKey = `mopl_seen_notifications_${user?._id || user?.id || "guest"}`;
-  const [seenNotificationIds, setSeenNotificationIds] = useState(() => {
+  // Read state for unread badge
+  const [seenAnnouncementIds, setSeenAnnouncementIds] = useState(() => {
     try {
-      const key = `mopl_seen_notifications_${user?._id || user?.id || "guest"}`;
-      return JSON.parse(localStorage.getItem(key) || "[]");
+      const stored = localStorage.getItem("seen_announcement_ids");
+      return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
     }
   });
 
-  // Keep seen IDs in sync when user logs in / changes
-  useEffect(() => {
-    try {
-      const key = `mopl_seen_notifications_${user?._id || user?.id || "guest"}`;
-      const stored = JSON.parse(localStorage.getItem(key) || "[]");
-      setSeenNotificationIds(stored);
-    } catch {
-      setSeenNotificationIds([]);
-    }
-  }, [user?._id, user?.id]);
+  const dropdownRef = useRef(null);
+  const notificationsRef = useRef(null);
 
-  // Compute unread announcements count
-  const unreadCount = announcements.filter((item) => {
-    const id = String(item._id || item.id || `${item.title}-${item.createdAt}`);
-    return !seenNotificationIds.includes(id);
-  }).length;
+  // Compute unread count based on unseen announcements
+  const unreadCount = announcements.filter(
+    (item) => !seenAnnouncementIds.includes(item._id || item.id)
+  ).length;
 
-  // Mark all notifications as seen so the badge disappears
-  const markAllAsSeen = () => {
-    if (!announcements || announcements.length === 0) return;
-    const allIds = announcements.map((item) =>
-      String(item._id || item.id || `${item.title}-${item.createdAt}`)
-    );
-    const updated = Array.from(new Set([...seenNotificationIds, ...allIds]));
-    setSeenNotificationIds(updated);
+  const markAllAsSeen = useCallback(() => {
+    const allIds = announcements.map((item) => item._id || item.id).filter(Boolean);
+    const merged = Array.from(new Set([...seenAnnouncementIds, ...allIds]));
+    setSeenAnnouncementIds(merged);
     try {
-      localStorage.setItem(notificationStorageKey, JSON.stringify(updated));
+      localStorage.setItem("seen_announcement_ids", JSON.stringify(merged));
     } catch (e) {
       console.error("Failed to persist seen notifications", e);
     }
-  };
+  }, [announcements, seenAnnouncementIds]);
 
   const handleToggleNotifications = () => {
     setNotificationsOpen((prev) => {
@@ -91,19 +69,11 @@ export default function Header({
     });
   };
 
-  // If panel is currently open and announcements arrive/update, clear badge immediately
   useEffect(() => {
     if (notificationsOpen && announcements.length > 0) {
       markAllAsSeen();
     }
-  }, [notificationsOpen, announcements]);
-
-  // Post Announcement Modal state (for admin/staff)
-  const [showPostModal, setShowPostModal] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
-  const [newPriority, setNewPriority] = useState("normal");
-  const [submittingAnnouncement, setSubmittingAnnouncement] = useState(false);
+  }, [notificationsOpen, announcements, markAllAsSeen]);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -116,10 +86,14 @@ export default function Header({
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
-  // Fetch announcements from MongoDB
+  // Fetch announcements from API
   const fetchAnnouncements = async () => {
     setLoadingAnnouncements(true);
     try {
@@ -136,68 +110,13 @@ export default function Header({
     fetchAnnouncements();
   }, []);
 
-  const handlePostAnnouncement = async (e) => {
-    e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim()) {
-      if (typeof showToast === "function") {
-        showToast("Please provide both title and content for announcement.", "error");
-      }
-      return;
-    }
-
-    setSubmittingAnnouncement(true);
-    try {
-      await api.post("/announcements", {
-        title: newTitle.trim(),
-        content: newContent.trim(),
-        priority: newPriority,
-        author: user?.name || "Library Admin",
-      });
-
-      if (typeof showToast === "function") {
-        showToast("Announcement published successfully!", "success");
-      }
-      setNewTitle("");
-      setNewContent("");
-      setNewPriority("normal");
-      setShowPostModal(false);
-      fetchAnnouncements();
-      // Dispatch custom event so other components know announcements updated
-      window.dispatchEvent(new Event("announcements-updated"));
-    } catch (err) {
-      console.error("Failed to post announcement:", err);
-      if (typeof showToast === "function") {
-        showToast(err.response?.data?.message || "Failed to post announcement", "error");
-      }
-    } finally {
-      setSubmittingAnnouncement(false);
-    }
-  };
-
-  const handleDeleteAnnouncement = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this announcement?")) return;
-    try {
-      await api.delete(`/announcements/${id}`);
-      if (typeof showToast === "function") {
-        showToast("Announcement removed.", "success");
-      }
-      fetchAnnouncements();
-      window.dispatchEvent(new Event("announcements-updated"));
-    } catch (err) {
-      console.error("Failed to delete announcement:", err);
-      if (typeof showToast === "function") {
-        showToast(err.response?.data?.message || "Failed to remove announcement", "error");
-      }
-    }
-  };
-
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
 
   const getInitials = (name) => {
-    if (!name) return "U";
+    if (!name) return "P";
     const parts = name.trim().split(" ");
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -205,12 +124,9 @@ export default function Header({
     return name.substring(0, 2).toUpperCase();
   };
 
-  const displayName = user?.name || "Library User";
-  const displayRole = user?.role
-    ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
-    : "Member";
-  const pageInfo = getPageHeaderInfo(activeTab, user?.role, user);
-  const canManageAnnouncements = user?.role === "admin";
+  const displayName = user?.name || "Library Patron";
+  const displayRole = "Patron";
+  const pageInfo = getPageHeaderInfo(activeTab, "patron", user);
 
   return (
     <header className="top-header">
@@ -290,20 +206,6 @@ export default function Header({
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  {canManageAnnouncements && (
-                    <button
-                      type="button"
-                      className="notification-post-action-btn"
-                      onClick={() => {
-                        setNotificationsOpen(false);
-                        setShowPostModal(true);
-                      }}
-                      title="Post announcement"
-                    >
-                      <Plus size={14} />
-                      <span>Post</span>
-                    </button>
-                  )}
                   <button
                     type="button"
                     className="notification-close-btn"
@@ -348,17 +250,6 @@ export default function Header({
                               {formattedDate}
                             </span>
                           </div>
-
-                          {canManageAnnouncements && item._id && (
-                            <button
-                              type="button"
-                              className="notification-item-delete-btn"
-                              onClick={() => handleDeleteAnnouncement(item._id)}
-                              title="Delete announcement"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
                         </div>
 
                         <h4 className="notification-item-title">{item.title}</h4>
@@ -392,20 +283,7 @@ export default function Header({
           </div>
 
           {dropdownOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: "calc(100% + 8px)",
-                right: 0,
-                width: "200px",
-                background: "var(--bg-surface, #FFFDF7)",
-                border: "1px solid var(--border, #DCC7AA)",
-                borderRadius: "var(--radius-xl, 12px)",
-                boxShadow: "var(--shadow-lg, 0 10px 25px -5px rgba(75,56,50,0.1))",
-                padding: "8px",
-                zIndex: 100,
-              }}
-            >
+            <div className="header-user-dropdown-menu">
               <div
                 style={{
                   padding: "8px 12px",
@@ -449,101 +327,6 @@ export default function Header({
           )}
         </div>
       </div>
-
-      {/* Post Announcement Modal for Admins */}
-      {showPostModal && typeof document !== "undefined" && createPortal(
-        <div className="announcement-modal-backdrop" onClick={() => setShowPostModal(false)}>
-          <div
-            className="announcement-modal-card"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="announcement-modal-header">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Megaphone size={20} style={{ color: "var(--color-primary)" }} />
-                <h3>New Library Announcement</h3>
-              </div>
-              <button
-                type="button"
-                className="notification-close-btn"
-                onClick={() => setShowPostModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handlePostAnnouncement}>
-              <div className="form-group" style={{ marginBottom: "12px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 700, display: "block", marginBottom: "4px" }}>
-                  Announcement Title
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Library Schedule During Exam Week"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: "12px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 700, display: "block", marginBottom: "4px" }}>
-                  Priority Level
-                </label>
-                <select
-                  value={newPriority}
-                  onChange={(e) => setNewPriority(e.target.value)}
-                  className="form-input"
-                >
-                  <option value="normal">Normal Priority</option>
-                  <option value="high">High (Urgent Announcement)</option>
-                  <option value="low">Low (General Notice)</option>
-                </select>
-              </div>
-
-              <div className="form-group" style={{ marginBottom: "16px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 700, display: "block", marginBottom: "4px" }}>
-                  Message Content
-                </label>
-                <textarea
-                  rows="4"
-                  placeholder="Provide all relevant details for library patrons and staff..."
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
-                  className="form-input"
-                  style={{ resize: "vertical" }}
-                  required
-                />
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowPostModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={submittingAnnouncement}
-                >
-                  {submittingAnnouncement ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" /> Publishing...
-                    </>
-                  ) : (
-                    "Publish Announcement"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>,
-        document.body
-      )}
     </header>
   );
 }
-

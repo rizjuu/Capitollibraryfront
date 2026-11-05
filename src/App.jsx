@@ -55,7 +55,7 @@ function App() {
           {/* Landing Page seen FIRST before login page */}
           <Route path="/" element={<Landing />} />
 
-          {/* Login Page with Admin, Staff, and Patron Gmail tabs */}
+          {/* Patron Sign In Modal Overlay */}
           <Route
             path="/login"
             element={

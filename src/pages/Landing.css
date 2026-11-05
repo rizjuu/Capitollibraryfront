@@ -223,6 +223,128 @@ html {
   box-shadow: 0 12px 28px rgba(75, 56, 50, 0.35);
 }
 
+/* Mobile Navigation Hamburger & Drawer */
+.landing-mobile-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid #DCC7AA;
+  background: #FFFDF7;
+  color: #4B3832;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.landing-mobile-toggle:hover {
+  background: #F5E6CA;
+  border-color: #6F4E37;
+}
+
+.landing-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 30, 26, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: landingDrawerFadeIn 0.22s ease-out;
+}
+
+.landing-mobile-drawer {
+  width: 82%;
+  max-width: 320px;
+  height: 100%;
+  background: #FAF7F2;
+  box-shadow: -10px 0 35px rgba(35, 24, 20, 0.35);
+  display: flex;
+  flex-direction: column;
+  animation: landingDrawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.landing-mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid #DCC7AA;
+  background: #FFFDF7;
+}
+
+.landing-brand-mobile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.landing-mobile-drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #DCC7AA;
+  background: #FAF7F2;
+  color: #4B3832;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.landing-mobile-nav-list {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  gap: 6px;
+  flex: 1;
+}
+
+.landing-mobile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: #4B3832;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.18s ease;
+  touch-action: manipulation;
+  min-height: 48px;
+}
+
+.landing-mobile-nav-item:hover,
+.landing-mobile-nav-item:active {
+  background: #EADBCA;
+  color: #3E2723;
+  transform: translateX(4px);
+}
+
+.landing-mobile-drawer-footer {
+  padding: 20px 16px;
+  border-top: 1px solid #DCC7AA;
+  background: #FFFDF7;
+}
+
+@keyframes landingDrawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes landingDrawerSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 /* Main Hero Section */
 .hero-section {
   padding-top: 145px;
@@ -388,41 +510,6 @@ html {
   background: #4B3832;
   transform: scale(1.02);
   box-shadow: 0 6px 18px rgba(75, 56, 50, 0.45);
-}
-
-.hero-search-entry-tags {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-left: 6px;
-}
-
-.hero-search-tag-label {
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: #F5E6CA;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.hero-search-tag-chip {
-  background: rgba(255, 253, 247, 0.16);
-  border: 1px solid rgba(245, 230, 202, 0.4);
-  color: #FFFDF7;
-  padding: 4px 12px;
-  border-radius: 99px;
-  font-size: 0.76rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(4px);
-}
-
-.hero-search-tag-chip:hover {
-  background: rgba(245, 230, 202, 0.35);
-  border-color: #F5E6CA;
-  transform: translateY(-1px);
 }
 
 .hero-search-count-badge {
@@ -1797,6 +1884,7 @@ html {
   }
 
   .landing-nav-links { display: none; }
+  .landing-mobile-toggle { display: inline-flex; }
   .landing-header-actions {
     gap: 8px;
     flex-shrink: 0;
@@ -1955,6 +2043,22 @@ html {
     gap: 8px;
     padding-left: 1rem;
     padding-right: 1rem;
+  }
+
+  .landing-book-modal-card {
+    padding: 20px 14px !important;
+    width: 95vw !important;
+    border-radius: 14px !important;
+  }
+
+  .landing-book-modal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .hero-search-entry-input,
+  .toolbar-search input {
+    font-size: 16px !important;
   }
 }
 

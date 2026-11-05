@@ -122,14 +122,13 @@ function Profile({ showToast = () => {} }) {
   };
 
   const currentAccount = account || user || {};
-  const isPatron = currentAccount.role === "patron";
 
   return (
     <motion.div className="dashboard-shell" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
       <div className="page-title-row">
         <div>
-          <h1 className="page-title"><User size={28} style={{ color: "var(--color-primary)" }} /> My Info</h1>
-          <p className="page-subtitle">View and update your personal account information.</p>
+          <h1 className="page-title"><User size={28} style={{ color: "var(--color-primary)" }} /> My Profile</h1>
+          <p className="page-subtitle">View and update your personal patron account information and classification.</p>
         </div>
       </div>
 
@@ -139,15 +138,15 @@ function Profile({ showToast = () => {} }) {
         <div className="addbook-wrapper">
           <div className="addbook-card">
             <div className="card-header-row" style={{ marginBottom: "20px" }}>
-              <div><h3 className="card-header-title">View Profile</h3><p className="card-header-sub">Your account details and access level.</p></div>
+              <div><h3 className="card-header-title">Patron Profile</h3><p className="card-header-sub">Your registered credentials and membership classification.</p></div>
               <ShieldCheck size={25} style={{ color: "var(--color-success)" }} />
             </div>
 
             <div className="form-grid-2col" style={{ marginBottom: "24px" }}>
               <div className="form-group"><label className="form-label">Username / Identifier</label><div className="form-readonly">{currentAccount.username || currentAccount.email || "Not set"}</div></div>
-              <div className="form-group"><label className="form-label">Role</label><div className="form-readonly">{currentAccount.role ? currentAccount.role.charAt(0).toUpperCase() + currentAccount.role.slice(1) : "User"}</div></div>
+              <div className="form-group"><label className="form-label">Membership Role</label><div className="form-readonly">Registered Patron</div></div>
               <div className="form-group"><label className="form-label">Account Status</label><div className="form-readonly" style={{ color: "var(--color-success)" }}><CheckCircle2 size={16} /> {currentAccount.status || "Active"}</div></div>
-              <div className="form-group"><label className="form-label">Classification</label><div className="form-readonly">{isPatron ? (profile.patronType === "student" ? "🎓 Student" : "🏡 Resident") : "Staff/Admin"}</div></div>
+              <div className="form-group"><label className="form-label">Classification</label><div className="form-readonly">{profile.patronType === "student" ? "🎓 Student" : "🏡 Resident"}</div></div>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -206,7 +205,7 @@ function Profile({ showToast = () => {} }) {
                     className="form-input"
                     value={profile.phone}
                     onChange={(event) => setProfile({ ...profile, phone: event.target.value })}
-                    placeholder="Add a phone number"
+                    placeholder="Add a contact number"
                   />
                 </div>
 
@@ -220,7 +219,7 @@ function Profile({ showToast = () => {} }) {
                     className="form-input"
                     value={profile.address}
                     onChange={(event) => setProfile({ ...profile, address: event.target.value })}
-                    placeholder="Enter street, barangay, city"
+                    placeholder="Enter street, barangay, municipality"
                   />
                 </div>
 
@@ -236,68 +235,65 @@ function Profile({ showToast = () => {} }) {
                     className="form-input"
                     value={profile.age}
                     onChange={(event) => setProfile({ ...profile, age: event.target.value })}
-                    placeholder="e.g. 21"
+                    placeholder="e.g. 20"
                   />
                 </div>
               </div>
 
               {/* Patron classification toggle */}
-              {isPatron && (
-                <div style={{ marginTop: "16px", marginBottom: "16px" }}>
-                  <label className="form-label" style={{ marginBottom: "8px" }}>
-                    Patron Classification
-                  </label>
-                  <div style={{ display: "flex", gap: "10px", maxWidth: "400px" }}>
-                    <button
-                      type="button"
-                      className={`btn ${profile.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
-                      onClick={() => setProfile({ ...profile, patronType: "student" })}
-                      style={{ flex: 1, justifyContent: "center" }}
-                    >
-                      <GraduationCap size={16} />
-                      Student
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${profile.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
-                      onClick={() => setProfile({ ...profile, patronType: "resident" })}
-                      style={{ flex: 1, justifyContent: "center" }}
-                    >
-                      <Home size={16} />
-                      Resident
-                    </button>
-                  </div>
-
-                  {/* Student Academic Details */}
-                  {/* If resident: omitted! */}
-                  {profile.patronType === "student" && (
-                    <div className="form-grid-2col" style={{ marginTop: "14px", backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "14px", borderRadius: "10px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
-                      <div className="form-group">
-                        <label className="form-label" style={{ color: "#3b82f6" }}>
-                          <Building size={16} /> School / University
-                        </label>
-                        <input
-                          className="form-input"
-                          value={profile.school}
-                          onChange={(e) => setProfile({ ...profile, school: e.target.value })}
-                          placeholder="e.g. Capitol University, USTP"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label" style={{ color: "#3b82f6" }}>
-                          Year Level / Grade
-                        </label>
-                        <input
-                          className="form-input"
-                          value={profile.yearLevel}
-                          onChange={(e) => setProfile({ ...profile, yearLevel: e.target.value })}
-                          placeholder="e.g. 2nd Year College"
-                        />
-                      </div>
-                    </div>
-                  )}
+              <div style={{ marginTop: "16px", marginBottom: "16px" }}>
+                <label className="form-label" style={{ marginBottom: "8px" }}>
+                  Patron Classification
+                </label>
+                <div style={{ display: "flex", gap: "10px", maxWidth: "400px" }}>
+                  <button
+                    type="button"
+                    className={`btn ${profile.patronType === "student" ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setProfile({ ...profile, patronType: "student" })}
+                    style={{ flex: 1, justifyContent: "center" }}
+                  >
+                    <GraduationCap size={16} />
+                    Student
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${profile.patronType === "resident" ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setProfile({ ...profile, patronType: "resident" })}
+                    style={{ flex: 1, justifyContent: "center" }}
+                  >
+                    <Home size={16} />
+                    Resident
+                  </button>
                 </div>
-              )}
+
+                {/* Student Academic Details */}
+                {profile.patronType === "student" && (
+                  <div className="form-grid-2col" style={{ marginTop: "14px", backgroundColor: "rgba(59, 130, 246, 0.05)", padding: "14px", borderRadius: "10px", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+                    <div className="form-group">
+                      <label className="form-label" style={{ color: "#3b82f6" }}>
+                        <Building size={16} /> School / University
+                      </label>
+                      <input
+                        className="form-input"
+                        value={profile.school}
+                        onChange={(e) => setProfile({ ...profile, school: e.target.value })}
+                        placeholder="e.g. Capitol University, USTP"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ color: "#3b82f6" }}>
+                        Year Level / Grade
+                      </label>
+                      <input
+                        className="form-input"
+                        value={profile.yearLevel}
+                        onChange={(e) => setProfile({ ...profile, yearLevel: e.target.value })}
+                        placeholder="e.g. 2nd Year College"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="form-actions" style={{ marginTop: "24px" }}>
                 <button type="submit" className="btn btn-primary" disabled={saving}>

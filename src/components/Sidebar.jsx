@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { X, LogOut, ChevronDown, ChevronRight } from "lucide-react";
+import { X, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getSidebarCategories } from "../utils/navigationConfig";
@@ -14,7 +13,7 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
   };
 
   const getInitials = (name) => {
-    if (!name) return "U";
+    if (!name) return "P";
     const parts = name.trim().split(" ");
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -22,47 +21,10 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const isAdmin = user?.role === "admin";
-  const isStaff = user?.role === "staff";
+  const categories = getSidebarCategories();
 
-  const categories = getSidebarCategories(user?.role);
-
-  // Track expanded state for categories with multiple items
-  const [openCategories, setOpenCategories] = useState(() => {
-    const initialState = {};
-    categories.forEach((cat) => {
-      if (cat.items.length > 1) {
-        // By default, expand if an item inside is active, or default open the active category
-        const containsActive = cat.items.some((item) => item.id === activeTab);
-        initialState[cat.id] = containsActive || true;
-      }
-    });
-    return initialState;
-  });
-
-  // Automatically expand category if active tab moves into it
-  useEffect(() => {
-    categories.forEach((cat) => {
-      if (cat.items.length > 1 && cat.items.some((item) => item.id === activeTab)) {
-        setOpenCategories((prev) => ({
-          ...prev,
-          [cat.id]: true
-        }));
-      }
-    });
-  }, [activeTab, categories]);
-
-  const toggleCategory = (categoryId) => {
-    setOpenCategories((prev) => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
-  };
-
-  const displayName = user?.name || (isAdmin ? "Administrator" : isStaff ? "Library Staff" : "User");
-  const displayRole = user?.role
-    ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
-    : "Staff";
+  const displayName = user?.name || "Library Patron";
+  const displayRole = "Patron";
 
   return (
     <aside className={`sidebar ${isOpen ? "mobile-open" : ""}`}>
@@ -73,7 +35,7 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
         </div>
         <div className="sidebar-brand-text">
           <span className="sidebar-brand-title">MOPL</span>
-          <span className="sidebar-brand-name">Library System</span>
+          <span className="sidebar-brand-name">Patron Portal</span>
         </div>
         {isOpen && (
           <button
@@ -88,65 +50,12 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
         )}
       </div>
 
-      {/* Navigation items */}
+      {/* Navigation items - Full Visibility, No Collapsible Dropdown */}
       <nav className="sidebar-nav">
-        {categories.map((category) => {
-          const isDropdown = category.items.length > 1;
-          const isExpanded = openCategories[category.id] ?? true;
-          const hasActiveChild = category.items.some((it) => it.id === activeTab);
-
-          if (isDropdown) {
-            return (
-              <div className="sidebar-category dropdown-category" key={category.id}>
-                <button
-                  type="button"
-                  className={`sidebar-category-dropdown-header ${hasActiveChild ? "has-active" : ""}`}
-                  onClick={() => toggleCategory(category.id)}
-                  aria-expanded={isExpanded}
-                >
-                  <span className="sidebar-category-title">{category.title}</span>
-                  <div className="sidebar-category-meta">
-                    <span className="sidebar-category-count">{category.items.length}</span>
-                    {isExpanded ? (
-                      <ChevronDown size={14} className="sidebar-chevron" />
-                    ) : (
-                      <ChevronRight size={14} className="sidebar-chevron" />
-                    )}
-                  </div>
-                </button>
-
-                {isExpanded && (
-                  <div className="sidebar-dropdown-menu">
-                    {category.items.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = activeTab === item.id;
-
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className={`sidebar-btn sidebar-dropdown-btn ${isActive ? "active" : ""}`}
-                          onClick={() => onTabChange(item.id)}
-                          title={item.label}
-                          aria-label={item.label}
-                        >
-                          <span className="sidebar-btn-icon">
-                            <Icon size={18} className="w-4 h-4" />
-                          </span>
-                          <span className="sidebar-btn-label">{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          }
-
-          // Single item category (e.g. Main / Home, Account / My Info)
-          return (
-            <div className="sidebar-category" key={category.id}>
-              <div className="sidebar-category-title">{category.title}</div>
+        {categories.map((category) => (
+          <div className="sidebar-category" key={category.id}>
+            <div className="sidebar-category-title">{category.title}</div>
+            <div className="sidebar-category-items" style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
               {category.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -156,20 +65,24 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
                     key={item.id}
                     type="button"
                     className={`sidebar-btn ${isActive ? "active" : ""}`}
-                    onClick={() => onTabChange(item.id)}
+                    style={{ height: "40px", padding: "0 12px", fontSize: "13.5px" }}
+                    onClick={() => {
+                      onTabChange(item.id);
+                      if (isOpen && onClose) onClose();
+                    }}
                     title={item.label}
                     aria-label={item.label}
                   >
                     <span className="sidebar-btn-icon">
-                      <Icon size={20} className="w-5 h-5" />
+                      <Icon size={18} className="w-4 h-4" />
                     </span>
                     <span className="sidebar-btn-label">{item.label}</span>
                   </button>
                 );
               })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </nav>
 
       <div className="sidebar-divider" />

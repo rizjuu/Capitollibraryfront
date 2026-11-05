@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   FileText,
   UserCheck,
+  Menu,
 } from "lucide-react";
 import "./Landing.css";
 
@@ -74,6 +75,7 @@ export default function Landing() {
   const [bookPreviewIndex, setBookPreviewIndex] = useState(0);
   const [selectedCatalogBook, setSelectedCatalogBook] = useState(null);
   const [loadingBooks, setLoadingBooks] = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const handleHeroSearchSubmit = (e) => {
     if (e) e.preventDefault();
@@ -321,23 +323,6 @@ export default function Landing() {
         </div>
 
         <div className="landing-header-actions">
-          <a
-            href="https://www.facebook.com/MisamisOrientalProvicialLibrary"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="header-facebook-btn"
-            title="Follow Misamis Oriental Provincial Library on Facebook"
-            aria-label="Misamis Oriental Provincial Library Facebook Page"
-          >
-            <svg width="36" height="36" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="12" fill="#1877F2" />
-              <path
-                d="M15.12 12.55l.48-3.15h-3.03V7.35c0-.86.42-1.7 1.77-1.7h1.37V2.97s-1.24-.21-2.43-.21c-2.48 0-4.1 1.5-4.1 4.23v2.41H6.4v3.15h2.78V20.2c.56.09 1.13.14 1.71.14s1.15-.05 1.71-.14v-7.65h2.52z"
-                fill="#ffffff"
-              />
-            </svg>
-          </a>
-
           {user ? (
             <button className="nav-btn-signin" onClick={handleGetStarted}>
               <UserCheck size={16} />
@@ -348,8 +333,88 @@ export default function Landing() {
               Sign In
             </Link>
           )}
+
+          <button
+            type="button"
+            className="landing-mobile-toggle"
+            onClick={() => setMobileNavOpen((prev) => !prev)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileNavOpen}
+          >
+            {mobileNavOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
       </header>
+
+      {/* MOBILE NAVIGATION DRAWER */}
+      {mobileNavOpen && (
+        <div className="landing-mobile-overlay" onClick={() => setMobileNavOpen(false)}>
+          <div className="landing-mobile-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="landing-mobile-drawer-header">
+              <div className="landing-brand-mobile">
+                <img
+                  src="/logo.webp"
+                  alt="Capitol Public Library Logo"
+                  style={{ width: "32px", height: "32px", borderRadius: "8px" }}
+                />
+                <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "#3E2723" }}>
+                  Capitol Library
+                </span>
+              </div>
+              <button
+                type="button"
+                className="landing-mobile-drawer-close"
+                onClick={() => setMobileNavOpen(false)}
+                aria-label="Close menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <nav className="landing-mobile-nav-list">
+              <a href="#hero" className="landing-mobile-nav-item" onClick={() => setMobileNavOpen(false)}>
+                Home
+              </a>
+              <a href="#news" className="landing-mobile-nav-item" onClick={() => setMobileNavOpen(false)}>
+                News &amp; Updates
+              </a>
+              <a href="#gallery" className="landing-mobile-nav-item" onClick={() => setMobileNavOpen(false)}>
+                Photo Gallery
+              </a>
+              <a href="#facilities" className="landing-mobile-nav-item" onClick={() => setMobileNavOpen(false)}>
+                Facilities
+              </a>
+              <a href="#location" className="landing-mobile-nav-item" onClick={() => setMobileNavOpen(false)}>
+                Location &amp; Hours
+              </a>
+            </nav>
+            <div className="landing-mobile-drawer-footer">
+              {user ? (
+                <button
+                  type="button"
+                  className="nav-btn-signin"
+                  style={{ width: "100%", justifyContent: "center" }}
+                  onClick={() => {
+                    setMobileNavOpen(false);
+                    handleGetStarted();
+                  }}
+                >
+                  <UserCheck size={16} />
+                  Go to Dashboard ({user.role})
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  className="nav-btn-signin"
+                  style={{ width: "100%", justifyContent: "center" }}
+                  onClick={() => setMobileNavOpen(false)}
+                >
+                  Sign In to Patron Portal
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* HERO SECTION */}
       <section id="hero" className="hero-section landing-reveal">
@@ -499,21 +564,7 @@ export default function Landing() {
                     <span>Click any book to view full details</span>
                   </div>
                 </div>
-              ) : (
-                <div className="hero-search-entry-tags">
-                  <span className="hero-search-tag-label">Popular:</span>
-                  {["Filipiniana", "Jose Rizal", "History", "Science", "Periodical", "Law"].map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      className="hero-search-tag-chip"
-                      onClick={() => setSearchQuery(tag)}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              )}
+              ) : null}
             </form>
 
             <div className="hero-cta-group">
@@ -528,9 +579,6 @@ export default function Landing() {
                     Patron Sign In
                     <ArrowRight size={18} />
                   </Link>
-                  <a href="#featured-collection" className="btn-cta-secondary">
-                    Browse Catalog
-                  </a>
                 </>
               )}
             </div>
@@ -1015,6 +1063,7 @@ export default function Landing() {
             onClick={() => setSelectedCatalogBook(null)}
           >
             <div
+              className="landing-book-modal-card"
               style={{
                 backgroundColor: "#FFFDF7",
                 border: "1px solid #DCC7AA",
@@ -1058,12 +1107,15 @@ export default function Landing() {
               </button>
 
               {/* 2-Column Responsive Layout */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
-                gap: "32px",
-                alignItems: "start"
-              }}>
+              <div
+                className="landing-book-modal-grid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
+                  gap: "32px",
+                  alignItems: "start"
+                }}
+              >
                 {/* LEFT: Huge Book Cover */}
                 <div style={{
                   display: "flex",
