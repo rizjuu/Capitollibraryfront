@@ -396,6 +396,40 @@
   color: #4B3832;
 }
 
+.auth-switch {
+  margin: 18px 0 0;
+  color: #6F4E37;
+  text-align: center;
+  font-size: 13.5px;
+}
+
+.auth-switch button {
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: #185a86;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-switch button:hover {
+  color: #134668;
+}
+
+.signup-verification-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.signup-verification-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .resend-container {
   margin-top: 8px;
 }

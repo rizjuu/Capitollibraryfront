@@ -12,6 +12,7 @@ import {
   Maximize2
 } from "lucide-react";
 import api from "../api";
+import { generateCallNumber, resolveSublocation, OFFICIAL_SECTIONS } from "../utils/libraryDetails";
 
 export const stripParentheses = (str) => {
   if (!str) return "";
@@ -19,11 +20,11 @@ export const stripParentheses = (str) => {
 };
 
 export const LIBRARY_SECTIONS = [
+  "Circulation Section",
   "Filipiniana Section",
+  "Reference Section",
   "Reserved Section",
   "Periodical Section",
-  "Circulation Section",
-  "Reference Section",
   "Special Collection Section"
 ];
 
@@ -96,18 +97,20 @@ function Catalog({
 
   // Filter Engine
   const filteredBooks = books.filter((book) => {
-    // 1. Text Search across Title, Author, Section, Category, ISBN, Barcode
+    // 1. Text Search across Title, Author, Call Number, Sublocation, Section, Category, ISBN, Barcode
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       const titleMatch = (book.title || "").toLowerCase().includes(q);
       const authorMatch = (book.author || "").toLowerCase().includes(q) ||
         (Array.isArray(book.authors) && book.authors.some(a => a.toLowerCase().includes(q)));
+      const callNumMatch = (book.callNumber || book.call_number || "").toLowerCase().includes(q);
+      const sublocMatch = (book.sublocation || "").toLowerCase().includes(q);
       const isbnMatch = (book.isbn || "").toLowerCase().includes(q);
       const barcodeMatch = (book.barcode || "").toLowerCase().includes(q);
       const sectionMatch = (book.section || "").toLowerCase().includes(q);
       const categoryMatch = (book.category || "").toLowerCase().includes(q);
 
-      if (!titleMatch && !authorMatch && !isbnMatch && !barcodeMatch && !sectionMatch && !categoryMatch) {
+      if (!titleMatch && !authorMatch && !callNumMatch && !sublocMatch && !isbnMatch && !barcodeMatch && !sectionMatch && !categoryMatch) {
         return false;
       }
     }
@@ -477,6 +480,24 @@ function Catalog({
 
                   <h3 className="book-title">{book.title}</h3>
                   <p className="book-author">by {displayAuthor}</p>
+                  <div style={{ marginTop: "6px" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        fontFamily: "monospace",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        backgroundColor: "var(--bg-elevated)",
+                        border: "1px solid var(--border-subtle)",
+                        color: "var(--text-primary)"
+                      }}
+                      title="Dewey Decimal Classification Spine Call Number"
+                    >
+                      {book.callNumber || book.call_number || generateCallNumber(book)}
+                    </span>
+                  </div>
                 </div>
 
                 <div
@@ -832,8 +853,17 @@ function Catalog({
                     </div>
 
                     <div>
-                      <span style={{ display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--text-muted)", fontWeight: "700" }}>8. CALL NUMBER</span>
-                      <span style={{ fontSize: "14.5px", fontWeight: "600", color: "var(--text-primary)" }}>{selectedBook.callNumber || "N/A"}</span>
+                      <span style={{ display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--text-muted)", fontWeight: "700" }}>8. CALL NUMBER (DDC SPINE)</span>
+                      <span style={{ fontSize: "14.5px", fontWeight: "700", fontFamily: "monospace", color: "var(--color-primary)" }}>
+                        {selectedBook.callNumber || selectedBook.call_number || generateCallNumber(selectedBook)}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span style={{ display: "block", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--text-muted)", fontWeight: "700" }}>SUBLOCATION</span>
+                      <span style={{ fontSize: "14.5px", fontWeight: "600", color: "var(--text-primary)" }}>
+                        {selectedBook.sublocation || resolveSublocation(selectedBook.section, selectedBook.category, selectedBook.shelf)}
+                      </span>
                     </div>
 
                     <div>

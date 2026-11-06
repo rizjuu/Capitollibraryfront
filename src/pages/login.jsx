@@ -35,6 +35,14 @@ function Login({ overlay = false }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [signupFirstName, setSignupFirstName] = useState("");
+  const [signupLastName, setSignupLastName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
+  const [signupStep, setSignupStep] = useState(1);
+  const [signupCode, setSignupCode] = useState("");
 
   // Forgot password flow state
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -69,6 +77,76 @@ function Login({ overlay = false }) {
     }
   };
 
+  const handleRequestSignupCode = async (e) => {
+    if (e) e.preventDefault();
+    setError("");
+    setSuccessMessage("");
+    setLoading(true);
+    try {
+      const response = await api.post("/auth/patron-register", {
+        firstName: signupFirstName.trim(),
+        lastName: signupLastName.trim(),
+        email: signupEmail.trim()
+      });
+      setSignupCode("");
+      setSignupStep(2);
+      setSuccessMessage(response.data.message || "Verification code sent. Check your email.");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Could not send a verification code. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!signupFirstName.trim() || !signupLastName.trim()) {
+      setError("Please enter your first and last name.");
+      return;
+    }
+
+    if (signupPassword.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (signupPassword !== signupConfirmPassword) {
+      setError("Passwords do not match. Please re-enter your password.");
+      return;
+    }
+
+    await handleRequestSignupCode();
+  };
+
+  const handleVerifySignupCode = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await api.post("/auth/patron-register/verify", {
+        email: signupEmail.trim(),
+        code: signupCode.trim(),
+        password: signupPassword
+      });
+
+      const { token, user: registeredUser } = response.data;
+      login(registeredUser, token, true);
+      navigate("/patron", { replace: true });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+        "Email verification failed. Please check the code and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleRequestResetCode = async (e) => {
     if (e) e.preventDefault();
     setError("");
@@ -163,7 +241,7 @@ function Login({ overlay = false }) {
       className={`login-page${overlay ? " login-overlay" : ""}`}
       role={overlay ? "dialog" : undefined}
       aria-modal={overlay ? "true" : undefined}
-      aria-label={overlay ? "Library sign in" : undefined}
+      aria-label={overlay ? (isSignUp ? "Library sign up" : "Library sign in") : undefined}
       onClick={overlay ? closeLogin : undefined}
     >
       <div className="login-modal" onClick={(event) => event.stopPropagation()}>
@@ -171,8 +249,8 @@ function Login({ overlay = false }) {
           type="button"
           className="login-close-button"
           onClick={closeLogin}
-          aria-label="Close sign in"
-          title="Close sign in"
+          aria-label={isSignUp ? "Close sign up" : "Close sign in"}
+          title={isSignUp ? "Close sign up" : "Close sign in"}
         >
           <X size={20} />
         </button>
@@ -191,13 +269,195 @@ function Login({ overlay = false }) {
 
         <div className="login-container">
           {!isForgotPassword ? (
+            isSignUp ? (
+              <>
+                <h2 className="login-title">Create Patron Account</h2>
+                <p className="login-description">
+                  Sign up to access the library catalog and manage your loans. You can complete your patron profile after signing in.
+                </p>
+
+                {error && <div className="login-error" role="alert">{error}</div>}
+
+                {signupStep === 1 ? (
+                  <form onSubmit={handleSignUp}>
+                    <label htmlFor="signup-first-name">First name</label>
+                    <input
+                      id="signup-first-name"
+                      type="text"
+                      placeholder="Enter your first name"
+                      value={signupFirstName}
+                      onChange={(e) => setSignupFirstName(e.target.value)}
+                      autoComplete="given-name"
+                      maxLength={80}
+                      required
+                      autoFocus
+                    />
+
+                    <label htmlFor="signup-last-name">Last name</label>
+                    <input
+                      id="signup-last-name"
+                      type="text"
+                      placeholder="Enter your last name"
+                      value={signupLastName}
+                      onChange={(e) => setSignupLastName(e.target.value)}
+                      autoComplete="family-name"
+                      maxLength={80}
+                      required
+                    />
+
+                    <label htmlFor="signup-email">Email address</label>
+                    <input
+                      id="signup-email"
+                      type="email"
+                      placeholder="name@example.com"
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      autoComplete="email"
+                      maxLength={254}
+                      required
+                    />
+
+                    <label htmlFor="signup-password">Password</label>
+                    <div className="password-wrapper">
+                      <input
+                        id="signup-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="At least 8 characters"
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
+                        autoComplete="new-password"
+                        maxLength={72}
+                        minLength={8}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? "◉" : "◌"}
+                      </button>
+                    </div>
+                    <p className="field-hint">Use 8–72 characters for your password.</p>
+
+                    <label htmlFor="signup-confirm-password">Confirm password</label>
+                    <input
+                      id="signup-confirm-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Re-enter your password"
+                      value={signupConfirmPassword}
+                      onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                      maxLength={72}
+                      minLength={8}
+                      required
+                    />
+
+                    <button
+                      type="submit"
+                      className="login-submit-btn full-width"
+                      disabled={loading}
+                    >
+                      {loading ? "Sending code..." : "Continue with Email"}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="signup-verification">
+                    <p className="login-description">
+                      Enter the 6-digit code sent to <strong>{signupEmail}</strong>. The code expires in 10 minutes.
+                    </p>
+                    {successMessage && <div className="login-success" role="status">{successMessage}</div>}
+                    <form onSubmit={handleVerifySignupCode}>
+                      <label htmlFor="signup-code">Email confirmation code</label>
+                      <input
+                        id="signup-code"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]{6}"
+                        placeholder="Enter 6-digit code"
+                        value={signupCode}
+                        onChange={(e) => setSignupCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        required
+                        autoFocus
+                      />
+                      <button
+                        type="submit"
+                        className="login-submit-btn full-width"
+                        disabled={loading || signupCode.length !== 6}
+                      >
+                        {loading ? "Verifying..." : "Confirm Email & Create Account"}
+                      </button>
+                    </form>
+                    <div className="signup-verification-actions">
+                      <button
+                        type="button"
+                        className="back-to-login-link"
+                        onClick={() => {
+                          setSignupStep(1);
+                          setSignupCode("");
+                          setError("");
+                          setSuccessMessage("");
+                        }}
+                      >
+                        Edit sign-up details
+                      </button>
+                      <button
+                        type="button"
+                        className="back-to-login-link"
+                        onClick={handleRequestSignupCode}
+                        disabled={loading}
+                      >
+                        Resend code
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {signupStep === 1 && (
+                  <>
+                    <p className="auth-switch">
+                      Already have an account?{" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSignUp(false);
+                          setError("");
+                          setSuccessMessage("");
+                        }}
+                      >
+                        Sign in
+                      </button>
+                    </p>
+
+                    <div className="login-divider">
+                      <span>or sign up with Google</span>
+                    </div>
+
+                    <div className="google-button-wrapper">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        size="large"
+                        width="380"
+                        text="continue_with"
+                        shape="rectangular"
+                        logo_alignment="left"
+                        theme="outline"
+                      />
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
               <>
                 <h2 className="login-title">Patron Sign In</h2>
                 <p className="login-description">
                   Access your patron account, borrow records, and catalog reservations.
                 </p>
 
-                {error && <div className="login-error">{error}</div>}
+                {error && <div className="login-error" role="alert">{error}</div>}
 
                 <form onSubmit={handlePasswordLogin}>
                   <label htmlFor="login-username">Username</label>
@@ -271,8 +531,21 @@ function Login({ overlay = false }) {
                     theme="outline"
                   />
                 </div>
+                <p className="auth-switch">
+                  New to the library?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSignUp(true);
+                      setError("");
+                    }}
+                  >
+                    Create an account
+                  </button>
+                </p>
               </>
-            ) : (
+            )
+          ) : (
               <div className="forgot-password-container">
                 <h2 className="login-title">Reset Password</h2>
                 <p className="login-description">

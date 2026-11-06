@@ -1,0 +1,124 @@
+erDiagram
+    ADMIN ||--o{ BOOKS : "archives (archived_by)"
+    ADMIN ||--o{ ANNOUNCEMENTS : "creates (author)"
+    STAFF ||--o{ TRANSACTIONS : "processes"
+    PATRON ||--o{ TRANSACTIONS : "borrows (borrower_id)"
+    BOOKS ||--o{ TRANSACTIONS : "loaned in (book_id)"
+
+    ADMIN {
+        UUID id PK
+        TEXT username "UNIQUE"
+        TEXT email "UNIQUE"
+        TEXT password
+        TEXT google_id
+        TEXT avatar
+        TEXT role "admin"
+        TEXT name
+        TEXT first_name
+        TEXT last_name
+        TEXT phone
+        TEXT address
+        TEXT status "active | disabled"
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    STAFF {
+        UUID id PK
+        TEXT username "UNIQUE"
+        TEXT email "UNIQUE"
+        TEXT password
+        TEXT google_id
+        TEXT avatar
+        TEXT role "staff"
+        TEXT name
+        TEXT first_name
+        TEXT last_name
+        TEXT phone
+        TEXT address
+        TEXT status "active | disabled"
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    PATRON {
+        UUID id PK
+        TEXT username "UNIQUE"
+        TEXT email "UNIQUE"
+        TEXT password
+        TEXT google_id "UNIQUE"
+        TEXT avatar
+        TEXT role "patron"
+        TEXT name
+        TEXT first_name
+        TEXT last_name
+        TEXT phone
+        TEXT address
+        TEXT patron_type "student | resident"
+        TEXT school
+        TEXT year_level
+        INT age
+        BOOL is_profile_completed
+        TEXT status "active | disabled"
+        TEXT reset_password_code
+        TIMESTAMPTZ reset_password_expires
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    BOOKS {
+        UUID id PK
+        TEXT isbn
+        TEXT barcode "UNIQUE NOT NULL"
+        TEXT accession_number "UNIQUE"
+        TEXT title "NOT NULL"
+        TEXT author
+        JSONB authors
+        TEXT category
+        TEXT section
+        TEXT publisher
+        INT publication_year
+        TEXT shelf
+        TEXT status "available | borrowed | maintenance | reserved"
+        BOOL available
+        TIMESTAMPTZ date_added
+        TEXT description
+        TEXT cover_url
+        TEXT open_library_key
+        TEXT source
+        TEXT condition
+        INT copies
+        BOOL borrowable
+        BOOL archived
+        TIMESTAMPTZ archived_at
+        UUID archived_by FK "→ ADMIN.id"
+        TEXT weeding_reason
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    TRANSACTIONS {
+        UUID id PK
+        UUID book_id FK "→ BOOKS.id"
+        UUID borrower_id FK "→ PATRON.id"
+        TEXT borrower_name "NOT NULL"
+        TEXT borrower_email
+        TIMESTAMPTZ due_date "NOT NULL"
+        BOOL returned
+        TIMESTAMPTZ return_date
+        TEXT type "Borrow | Return"
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    ANNOUNCEMENTS {
+        UUID id PK
+        TEXT title "NOT NULL"
+        TEXT content "NOT NULL"
+        TEXT date
+        TEXT priority "low | normal | high"
+        TEXT author FK "→ ADMIN.name"
+        BOOL active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }

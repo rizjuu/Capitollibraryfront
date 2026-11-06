@@ -1,0 +1,144 @@
+erDiagram
+    %% Core Relationships
+    CATEGORY ||--o{ BOOK : "categorizes"
+    PUBLISHER ||--o{ BOOK : "publishes"
+    SHELF_LOCATION ||--o{ BOOK : "located_at"
+    AUTHOR ||--o{ BOOK_AUTHOR : "writes"
+    BOOK ||--o{ BOOK_AUTHOR : "written_by"
+
+    PATRON_PROFILE ||--|| PATRON : "profile_of"
+    PATRON ||--o{ TRANSACTION : "borrows"
+    BOOK ||--o{ TRANSACTION : "loaned_in"
+    STAFF ||--o{ TRANSACTION : "processes"
+    ADMIN ||--o{ BOOK : "archives_weeds"
+
+    TRANSACTION ||--o| OVERDUE_FINE : "incurs"
+    ADMIN ||--o{ ANNOUNCEMENT : "publishes"
+
+    CATEGORY {
+        UUID category_id PK
+        TEXT category_name "General | Fiction | Filipiniana"
+    }
+
+    PUBLISHER {
+        UUID publisher_id PK
+        TEXT publisher_name
+    }
+
+    SHELF_LOCATION {
+        UUID shelf_id PK
+        TEXT shelf_name
+        TEXT section_name
+    }
+
+    AUTHOR {
+        UUID author_id PK
+        TEXT author_name
+    }
+
+    BOOK_AUTHOR {
+        UUID book_id FK "→ BOOK.book_id"
+        UUID author_id FK "→ AUTHOR.author_id"
+    }
+
+    BOOK {
+        UUID book_id PK
+        TEXT isbn
+        TEXT barcode "UNIQUE NOT NULL"
+        TEXT accession_number "UNIQUE"
+        TEXT title "NOT NULL"
+        UUID category_id FK "→ CATEGORY.category_id"
+        UUID publisher_id FK "→ PUBLISHER.publisher_id"
+        UUID shelf_id FK "→ SHELF_LOCATION.shelf_id"
+        INT publication_year
+        INT copies "total"
+        BOOL available
+        BOOL borrowable
+        TEXT status "available | borrowed | maintenance"
+        BOOL archived
+        TIMESTAMPTZ archived_at
+        UUID archived_by_admin_id FK "→ ADMIN.admin_id"
+        TEXT weeding_reason
+        TIMESTAMPTZ created_at
+    }
+
+    PATRON {
+        UUID patron_id PK
+        TEXT username "UNIQUE"
+        TEXT email "UNIQUE"
+        TEXT password
+        TEXT name
+        TEXT first_name
+        TEXT last_name
+        TEXT phone
+        TEXT address
+        TEXT patron_type "student | resident"
+        TEXT status "active | disabled"
+        TIMESTAMPTZ created_at
+    }
+
+    PATRON_PROFILE {
+        UUID profile_id PK
+        UUID patron_id FK "→ PATRON.patron_id UNIQUE"
+        TEXT school
+        TEXT year_level
+        INT age
+        BOOL is_profile_completed
+    }
+
+    STAFF {
+        UUID staff_id PK
+        TEXT username "UNIQUE"
+        TEXT email "UNIQUE"
+        TEXT password
+        TEXT name
+        TEXT phone
+        TEXT role "staff"
+        TEXT status "active | disabled"
+        TIMESTAMPTZ created_at
+    }
+
+    ADMIN {
+        UUID admin_id PK
+        TEXT username "UNIQUE"
+        TEXT email "UNIQUE"
+        TEXT password
+        TEXT name
+        TEXT phone
+        TEXT role "admin"
+        TEXT status "active | disabled"
+        TIMESTAMPTZ created_at
+    }
+
+    TRANSACTION {
+        UUID transaction_id PK
+        UUID book_id FK "→ BOOK.book_id"
+        UUID borrower_patron_id FK "→ PATRON.patron_id"
+        UUID processed_by_staff_id FK "→ STAFF.staff_id"
+        TEXT borrower_name
+        TEXT borrower_email
+        TIMESTAMPTZ due_date "NOT NULL"
+        BOOL returned
+        TIMESTAMPTZ return_date
+        TEXT type "Borrow | Return"
+        TIMESTAMPTZ created_at
+    }
+
+    OVERDUE_FINE {
+        UUID fine_id PK
+        UUID transaction_id FK "→ TRANSACTION.transaction_id UNIQUE"
+        INT days_overdue
+        NUMERIC daily_rate "PHP 5.00/day"
+        NUMERIC total_fine
+        TEXT payment_status "unpaid | paid | waived"
+    }
+
+    ANNOUNCEMENT {
+        UUID announcement_id PK
+        TEXT title "NOT NULL"
+        TEXT content "NOT NULL"
+        TEXT priority "low | normal | high"
+        UUID published_by_admin_id FK "→ ADMIN.admin_id"
+        BOOL active
+        TIMESTAMPTZ created_at
+    }

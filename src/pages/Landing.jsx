@@ -430,7 +430,7 @@ export default function Landing() {
             </h1>
 
             <p className="hero-desc-main">
-              Welcome to the Misamis Oriental Provincial Capitol Public Library. Explore over 12,000+ titles, Filipiniana archives, digital e-resources, and modern circulation services.
+              Welcome to the Misamis Oriental Provincial Capitol Public Library. Explore over 9,951+ printed resources across six official sections — Filipiniana archives, digital e-resources, and modern circulation services under RA 7743.
             </p>
 
             {/* FRONT PAGE SEARCH BOOKS ENTRY */}
@@ -1234,6 +1234,18 @@ export default function Landing() {
                       <span style={{ display: "block", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", color: "#8C7768", fontWeight: 700 }}>Shelf Location</span>
                       <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#4B3832" }}>{selectedCatalogBook.shelf || "General Shelf"}</span>
                     </div>
+                    {(selectedCatalogBook.callNumber || selectedCatalogBook.call_number) && (
+                      <div>
+                        <span style={{ display: "block", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", color: "#8C7768", fontWeight: 700 }}>Call Number (DDC Spine)</span>
+                        <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#6F4E37", fontFamily: "'Courier New', Courier, monospace", background: "#F5E6CA", padding: "2px 8px", borderRadius: "6px", display: "inline-block" }}>{selectedCatalogBook.callNumber || selectedCatalogBook.call_number}</span>
+                      </div>
+                    )}
+                    {selectedCatalogBook.sublocation && (
+                      <div>
+                        <span style={{ display: "block", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", color: "#8C7768", fontWeight: 700 }}>Sublocation</span>
+                        <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#4B3832" }}>{selectedCatalogBook.sublocation}</span>
+                      </div>
+                    )}
                     <div>
                       <span style={{ display: "block", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", color: "#8C7768", fontWeight: 700 }}>Publisher</span>
                       <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#4B3832" }}>{selectedCatalogBook.publisher || "N/A"}</span>
