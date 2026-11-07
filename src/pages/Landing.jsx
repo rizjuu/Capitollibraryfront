@@ -12,7 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Sparkles,
   Maximize2,
   Play,
   ArrowRight,
@@ -67,7 +66,6 @@ export default function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [activeCategory, setActiveCategory] = useState("everything");
   const [searchQuery, setSearchQuery] = useState("");
   const [previewIndex, setPreviewIndex] = useState(null);
   const [heroImageIndex, setHeroImageIndex] = useState(0);
@@ -200,16 +198,6 @@ export default function Landing() {
     };
   }, []);
 
-  const categories = [
-    { id: "everything", label: "All Collections" },
-    { id: "filipiniana", label: "🇵🇭 Filipiniana" },
-    { id: "reserved", label: "🩺 Reserved (M.R.)" },
-    { id: "periodical", label: "📰 Periodicals & Journals" },
-    { id: "circulation", label: "📚 Circulation & Kids" },
-    { id: "reference", label: "🎓 Reference & Theses" },
-    { id: "special", label: "⚖️ Special Collection & Law" }
-  ];
-
   const newsHighlights = [
     {
       title: "Library adopts hybrid services for public access",
@@ -221,37 +209,10 @@ export default function Landing() {
   ];
 
   // Filter Library Collection showcase to ONLY the most known, famous & prominent books
-  const knownLibraryBooks = libraryBooks.filter((book) => {
-    if (!isMostKnownBook(book)) return false;
+  const knownLibraryBooks = libraryBooks.filter((book) => isMostKnownBook(book));
 
-    const sec = String(book.section || "").toLowerCase();
-    const cat = String(book.category || "").toLowerCase();
-    const matchesCategory =
-      activeCategory === "everything" ||
-      (activeCategory === "filipiniana" && (sec.includes("filipiniana") || cat.includes("filipiniana"))) ||
-      (activeCategory === "reserved" && (sec.includes("reserved") || sec.includes("m.r.") || cat.includes("medical"))) ||
-      (activeCategory === "periodical" && (sec.includes("periodical") || cat.includes("periodical") || cat.includes("journal"))) ||
-      (activeCategory === "circulation" && (sec.includes("circulation") || cat.includes("children") || /(fiction|literature|novel|science|mathematics)/.test(cat))) ||
-      (activeCategory === "reference" && (sec.includes("reference") || sec.includes("theses") || cat.includes("reference"))) ||
-      (activeCategory === "special" && (sec.includes("special") || sec.includes("law") || cat.includes("law") || cat.includes("governance") || cat.includes("peace")));
-
-    return matchesCategory;
-  });
-
-  // Graceful fallback for specific categories that may have fewer explicitly listed known titles
-  const showcaseBooks = knownLibraryBooks.length > 0 ? knownLibraryBooks : libraryBooks.filter((book) => {
-    const sec = String(book.section || "").toLowerCase();
-    const cat = String(book.category || "").toLowerCase();
-    return (
-      activeCategory === "everything" ||
-      (activeCategory === "filipiniana" && (sec.includes("filipiniana") || cat.includes("filipiniana"))) ||
-      (activeCategory === "reserved" && (sec.includes("reserved") || sec.includes("m.r.") || cat.includes("medical"))) ||
-      (activeCategory === "periodical" && (sec.includes("periodical") || cat.includes("periodical") || cat.includes("journal"))) ||
-      (activeCategory === "circulation" && (sec.includes("circulation") || cat.includes("children") || /(fiction|literature|novel|science|mathematics)/.test(cat))) ||
-      (activeCategory === "reference" && (sec.includes("reference") || sec.includes("theses") || cat.includes("reference"))) ||
-      (activeCategory === "special" && (sec.includes("special") || sec.includes("law") || cat.includes("law") || cat.includes("governance") || cat.includes("peace")))
-    );
-  });
+  // Fallback if fewer explicitly listed known titles exist
+  const showcaseBooks = knownLibraryBooks.length > 0 ? knownLibraryBooks : libraryBooks;
 
   // Comprehensive catalog search results for home search entry
   const catalogSearchResults = searchQuery.trim()
@@ -286,9 +247,6 @@ export default function Landing() {
     }
   }, [showcaseBooks.length]);
 
-  useEffect(() => {
-    setBookPreviewIndex(0);
-  }, [activeCategory]);
 
   useEffect(() => {
     if (showcaseBooks.length <= 1) return undefined;
@@ -420,11 +378,6 @@ export default function Landing() {
       <section id="hero" className="hero-section landing-reveal">
         <div className="hero-wrapper landing-reveal">
           <div className="hero-text-side">
-            <div className="hero-eyebrow-pill">
-              <Sparkles size={14} />
-              Misamis Oriental Provincial Capitol Public Library
-            </div>
-
             <h1 className="hero-title-main">
               Elevate Your Knowledge. <span>Discover, Learn, &amp; Grow.</span>
             </h1>
@@ -616,20 +569,6 @@ export default function Landing() {
               Library <span>Collection.</span>
             </h2>
           </div>
-        </div>
-
-        {/* Category Pills */}
-        <div className="category-pills-row">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              className={`cat-pill-btn ${activeCategory === cat.id ? "active" : ""}`}
-              onClick={() => setActiveCategory(cat.id)}
-            >
-              {cat.label}
-            </button>
-          ))}
         </div>
 
         <div className="catalog-showcase landing-reveal" aria-live="polite">
@@ -994,18 +933,6 @@ export default function Landing() {
             <p>
               The official Provincial Capitol Public Library of Misamis Oriental. Dedicated to serving citizens, students, and researchers with comprehensive physical and digital learning resources.
             </p>
-            <a
-              href="https://www.facebook.com/MisamisOrientalProvicialLibrary"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer-facebook-badge"
-              title="Visit Official Facebook Page"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span>Follow on Facebook</span>
-            </a>
           </div>
 
           <div className="footer-col">
