@@ -29,7 +29,10 @@ import {
   AlertCircle,
   ShieldCheck,
   Save,
-  User
+  User,
+  CalendarCheck,
+  CalendarClock,
+  Calendar
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPatronId } from "../utils/patronUtils";
@@ -45,6 +48,9 @@ function PatronDashboard() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [myLoans, setMyLoans] = useState([]);
   const [myHistory, setMyHistory] = useState([]);
+  const [myReservations, setMyReservations] = useState([]);
+  const [loadingReservations, setLoadingReservations] = useState(false);
+  const [cancellingResId, setCancellingResId] = useState(null);
   const [myStats, setMyStats] = useState({
     activeLoans: 0,
     returnedCount: 0,
@@ -118,6 +124,34 @@ function PatronDashboard() {
     }
   };
 
+  const fetchMyReservations = async () => {
+    setLoadingReservations(true);
+    try {
+      const res = await api.get("/reservations/my-reservations");
+      setMyReservations(res.data || []);
+    } catch (err) {
+      console.warn("Failed to load my reservations", err.message);
+    } finally {
+      setLoadingReservations(false);
+    }
+  };
+
+  const handleCancelReservation = async (reservationId, bookTitle) => {
+    if (!reservationId) return;
+    setCancellingResId(reservationId);
+    try {
+      const res = await api.post(`/reservations/${reservationId}/cancel`);
+      showToast(res.data?.message || `Reservation cancelled for "${bookTitle || 'Book'}".`, "success");
+      fetchMyReservations();
+      fetchBooks();
+    } catch (err) {
+      console.error("Failed to cancel reservation:", err);
+      showToast(err.response?.data?.message || "Failed to cancel reservation.", "error");
+    } finally {
+      setCancellingResId(null);
+    }
+  };
+
   const fetchMyStats = async () => {
     try {
       const res = await api.get("/transactions/my-stats");
@@ -135,6 +169,7 @@ function PatronDashboard() {
     fetchBooks();
     fetchMyLoans();
     fetchMyHistory();
+    fetchMyReservations();
     fetchMyStats();
   }, []);
 
@@ -599,10 +634,361 @@ function PatronDashboard() {
             books={books}
             loading={loadingBooks}
             isPatronView={true}
-            onBookUpdated={fetchBooks}
+            onBookUpdated={() => {
+              fetchBooks();
+              fetchMyReservations();
+            }}
             showToast={showToast}
           />
         )}
+
+        {/* ======================================================== */}
+        {/* PATRON: My Reservations & Waiting List Tab               */}
+        {/* ======================================================== */}
+        {activeTab === "my-reservations" && (() => {
+          const readyHolds = myReservations.filter((r) => r.status === "ready");
+          const waitingHolds = myReservations.filter((r) => r.status === "waiting");
+          const pastHolds = myReservations.filter((r) => ["fulfilled", "cancelled", "expired"].includes(r.status));
+
+          const formatDateShort = (d) => {
+            if (!d) return "N/A";
+            return new Date(d).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric"
+            });
+          };
+
+          return (
+            <motion.div
+              className="dashboard-shell"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="page-title-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
+                <div>
+                  <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px", margin: 0 }}>
+                    <CalendarCheck size={28} style={{ color: "var(--color-primary)" }} />
+                    My Reservations & Waiting List
+                  </h1>
+                  <p className="page-subtitle" style={{ margin: "4px 0 0" }}>
+                    Track your active book holds, scheduled pickup dates, and waiting list queue positions.
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      fetchMyReservations();
+                      fetchBooks();
+                    }}
+                    style={{ fontSize: "13px", padding: "8px 14px" }}
+                  >
+                    Refresh Status
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setActiveTab("books")}
+                    style={{ fontSize: "13px", padding: "8px 16px", fontWeight: 700 }}
+                  >
+                    + Reserve More Books
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats Highlights */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+                <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px 20px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
+                    Ready for Pickup (Priority Hold)
+                  </span>
+                  <div style={{ fontSize: "28px", fontWeight: 800, color: readyHolds.length > 0 ? "#15803d" : "var(--text-primary)", marginTop: "4px" }}>
+                    {readyHolds.length}
+                  </div>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                    Visit the library desk on your scheduled date
+                  </span>
+                </div>
+
+                <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px 20px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
+                    In Waiting List Queue
+                  </span>
+                  <div style={{ fontSize: "28px", fontWeight: 800, color: waitingHolds.length > 0 ? "#2563eb" : "var(--text-primary)", marginTop: "4px" }}>
+                    {waitingHolds.length}
+                  </div>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                    Auto-promotes when previous borrower returns
+                  </span>
+                </div>
+
+                <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px 20px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
+                    Library Hours & Policy
+                  </span>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-primary)", marginTop: "6px" }}>
+                    8:00 AM – 5:00 PM (Mon–Fri)
+                  </div>
+                  <span style={{ fontSize: "11.5px", color: "var(--text-muted)", display: "block", marginTop: "2px" }}>
+                    Unclaimed books transfer after 5:00 PM on pickup date
+                  </span>
+                </div>
+              </div>
+
+              {loadingReservations ? (
+                <div className="empty-state">
+                  <div className="spinner" style={{ width: "32px", height: "32px", margin: "0 auto 12px" }} />
+                  <p>Loading your reservations...</p>
+                </div>
+              ) : readyHolds.length === 0 && waitingHolds.length === 0 ? (
+                <div
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "16px",
+                    padding: "48px 24px",
+                    textAlign: "center"
+                  }}
+                >
+                  <CalendarCheck size={48} style={{ color: "var(--text-muted)", margin: "0 auto 16px", opacity: 0.6 }} />
+                  <h3 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px" }}>
+                    No Active Holds or Waiting List Entries
+                  </h3>
+                  <p style={{ fontSize: "14px", color: "var(--text-muted)", maxWidth: "460px", margin: "0 auto 20px" }}>
+                    You don't have any books reserved right now. Explore our catalog to place a hold on available books or join the queue for popular titles.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setActiveTab("books")}
+                    style={{ padding: "10px 22px", fontWeight: 700 }}
+                  >
+                    Browse Catalog Now →
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                  {/* 1. READY FOR PICKUP HOLDS */}
+                  {readyHolds.length > 0 && (
+                    <div>
+                      <h3 style={{ fontSize: "17px", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+                        <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#16a34a", display: "inline-block" }} />
+                        Ready for Pickup at Library Desk ({readyHolds.length})
+                      </h3>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "16px" }}>
+                        {readyHolds.map((res) => {
+                          const book = res.book || {};
+                          return (
+                            <div
+                              key={res.id || res._id}
+                              style={{
+                                background: "var(--bg-surface)",
+                                border: "2px solid rgba(34, 197, 94, 0.4)",
+                                borderRadius: "14px",
+                                padding: "18px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "14px",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.04)"
+                              }}
+                            >
+                              <div style={{ display: "flex", gap: "14px" }}>
+                                {book.coverUrl ? (
+                                  <img
+                                    src={book.coverUrl}
+                                    alt={book.title}
+                                    style={{ width: "55px", height: "76px", objectFit: "cover", borderRadius: "6px", border: "1px solid var(--border)", flexShrink: 0 }}
+                                    onError={(e) => { e.target.style.display = "none"; }}
+                                  />
+                                ) : (
+                                  <div style={{ width: "55px", height: "76px", background: "var(--bg-base)", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <BookOpen size={24} style={{ color: "var(--text-muted)" }} />
+                                  </div>
+                                )}
+
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span className="status-pill active" style={{ fontSize: "11px", padding: "2px 8px", background: "rgba(34, 197, 94, 0.12)", color: "#16a34a", borderColor: "rgba(34, 197, 94, 0.3)" }}>
+                                    Position #1 • Ready for Pickup
+                                  </span>
+                                  <h4 style={{ margin: "6px 0 2px", fontSize: "15px", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                                    {book.title || "Library Book"}
+                                  </h4>
+                                  <p style={{ margin: 0, fontSize: "12.5px", color: "var(--text-muted)" }}>
+                                    by {book.author || "Unknown"}
+                                  </p>
+                                  <div style={{ marginTop: "4px" }}>
+                                    <span style={{ fontFamily: "monospace", fontSize: "11px", color: "var(--color-primary)", fontWeight: 700 }}>
+                                      {book.callNumber || book.barcode}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Pickup date & deadline info */}
+                              <div style={{ background: "var(--bg-base)", border: "1px solid var(--border-subtle)", borderRadius: "10px", padding: "12px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                                  <span style={{ color: "var(--text-muted)" }}>📅 Scheduled Pickup:</span>
+                                  <strong style={{ color: "var(--text-primary)" }}>{formatDateShort(res.pickupDate)}</strong>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px", marginBottom: "6px" }}>
+                                  <span style={{ color: "var(--text-muted)" }}>⏰ Time Window:</span>
+                                  <span style={{ color: "var(--text-secondary)" }}>{res.pickupTime || "8:00 AM - 5:00 PM"}</span>
+                                </div>
+                                <div style={{ fontSize: "11.5px", color: "#d97706", display: "flex", alignItems: "flex-start", gap: "5px", lineHeight: 1.4, borderTop: "1px dashed var(--border-subtle)", paddingTop: "6px" }}>
+                                  <AlertCircle size={13} style={{ flexShrink: 0, marginTop: "2px" }} />
+                                  <span>
+                                    Unclaimed hold automatically transfers to waiting list after 5:00 PM on pickup date.
+                                  </span>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => handleCancelReservation(res.id || res._id, book.title)}
+                                disabled={cancellingResId === (res.id || res._id)}
+                                style={{ width: "100%", justifyContent: "center", fontSize: "13px", padding: "8px" }}
+                              >
+                                {cancellingResId === (res.id || res._id) ? "Cancelling..." : "Cancel Reservation"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. IN WAITING LIST */}
+                  {waitingHolds.length > 0 && (
+                    <div>
+                      <h3 style={{ fontSize: "17px", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+                        <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#3b82f6", display: "inline-block" }} />
+                        In Waiting List Queue ({waitingHolds.length})
+                      </h3>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "16px" }}>
+                        {waitingHolds.map((res) => {
+                          const book = res.book || {};
+                          return (
+                            <div
+                              key={res.id || res._id}
+                              style={{
+                                background: "var(--bg-surface)",
+                                border: "1px solid var(--border)",
+                                borderRadius: "14px",
+                                padding: "18px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "14px"
+                              }}
+                            >
+                              <div style={{ display: "flex", gap: "14px" }}>
+                                {book.coverUrl ? (
+                                  <img
+                                    src={book.coverUrl}
+                                    alt={book.title}
+                                    style={{ width: "55px", height: "76px", objectFit: "cover", borderRadius: "6px", border: "1px solid var(--border)", flexShrink: 0 }}
+                                    onError={(e) => { e.target.style.display = "none"; }}
+                                  />
+                                ) : (
+                                  <div style={{ width: "55px", height: "76px", background: "var(--bg-base)", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <BookOpen size={24} style={{ color: "var(--text-muted)" }} />
+                                  </div>
+                                )}
+
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span className="status-pill active" style={{ fontSize: "11px", padding: "2px 8px", background: "rgba(59, 130, 246, 0.12)", color: "#2563eb", borderColor: "rgba(59, 130, 246, 0.3)" }}>
+                                    <Clock size={11} style={{ marginRight: "3px" }} />
+                                    Position #{res.queuePosition || 2} in Queue
+                                  </span>
+                                  <h4 style={{ margin: "6px 0 2px", fontSize: "15px", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                                    {book.title || "Library Book"}
+                                  </h4>
+                                  <p style={{ margin: 0, fontSize: "12.5px", color: "var(--text-muted)" }}>
+                                    by {book.author || "Unknown"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div style={{ background: "var(--bg-base)", border: "1px solid var(--border-subtle)", borderRadius: "10px", padding: "12px", fontSize: "12.5px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                                  <span style={{ color: "var(--text-muted)" }}>Estimated Pickup:</span>
+                                  <strong style={{ color: "var(--text-primary)" }}>{formatDateShort(res.pickupDate)}</strong>
+                                </div>
+                                <p style={{ margin: 0, fontSize: "11.5px", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                                  You are in line. Once earlier holds finish, this book will automatically transfer to you and you will receive an SMS reminder.
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => handleCancelReservation(res.id || res._id, book.title)}
+                                disabled={cancellingResId === (res.id || res._id)}
+                                style={{ width: "100%", justifyContent: "center", fontSize: "13px", padding: "8px" }}
+                              >
+                                {cancellingResId === (res.id || res._id) ? "Leaving..." : "Leave Waiting List"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. PAST COMPLETED / CANCELLED / EXPIRED RESERVATIONS */}
+                  {pastHolds.length > 0 && (
+                    <div style={{ marginTop: "12px" }}>
+                      <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-muted)", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        Past Reservation History ({pastHolds.length})
+                      </h4>
+                      <div className="table-container" style={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: "12px" }}>
+                        <table className="custom-table" style={{ width: "100%", fontSize: "13px" }}>
+                          <thead>
+                            <tr>
+                              <th>Book Title</th>
+                              <th>Pickup Date</th>
+                              <th>Status</th>
+                              <th>Resolution Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pastHolds.map((h) => (
+                              <tr key={h.id || h._id}>
+                                <td style={{ fontWeight: 600 }}>{(h.book && h.book.title) || "Book"}</td>
+                                <td>{formatDateShort(h.pickupDate)}</td>
+                                <td>
+                                  <span
+                                    className={`status-pill ${
+                                      h.status === "fulfilled" ? "active" : "overdue"
+                                    }`}
+                                    style={{ fontSize: "11px", padding: "2px 8px" }}
+                                  >
+                                    {h.status === "fulfilled"
+                                      ? "Borrowed"
+                                      : h.status === "expired"
+                                      ? "Expired (Auto-transferred)"
+                                      : "Cancelled"}
+                                  </span>
+                                </td>
+                                <td>{formatDateShort(h.fulfilledAt || h.cancelledAt || h.expiredAt || h.updatedAt)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          );
+        })()}
 
 
 

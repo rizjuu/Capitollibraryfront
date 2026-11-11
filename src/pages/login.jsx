@@ -223,10 +223,12 @@ function Login({ overlay = false }) {
       login(loggedUser, token, true);
       navigate("/patron", { replace: true });
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        "Google sign-in failed. Please try again."
-      );
+      const serverMsg = err.response?.data?.message;
+      const detail = err.response?.data?.error;
+      const displayMsg = detail && !serverMsg?.includes(detail)
+        ? `${serverMsg}: ${detail}`
+        : (serverMsg || "Google sign-in failed. Please try again.");
+      setError(displayMsg);
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import {
   BookmarkCheck,
   History,
   User,
+  CalendarCheck,
 } from "lucide-react";
 
 /**
@@ -23,6 +24,7 @@ export function getSidebarCategories() {
       title: "Catalog & Loans",
       items: [
         { id: "books", label: "Browse Catalog", icon: Search },
+        { id: "my-reservations", label: "Holds & Reservations", icon: CalendarCheck },
         { id: "my-loans", label: "My Borrowed Books", icon: BookmarkCheck },
         { id: "history", label: "Borrowing History", icon: History },
       ],
@@ -51,6 +53,13 @@ export function getPageHeaderInfo(activeTab = "dashboard", role = "patron", user
         title: "Browse Catalog",
         emoji: "📚",
         subtitle: "Search and explore books available to borrow across all library collections.",
+        category: "Catalog & Loans",
+      };
+    case "my-reservations":
+      return {
+        title: "My Reservations & Waiting List",
+        emoji: "📅",
+        subtitle: "Track your scheduled book pickups, waiting queue positions, and hold deadlines.",
         category: "Catalog & Loans",
       };
     case "my-loans":
