@@ -334,7 +334,7 @@ function PatronDashboard() {
   };
 
   const getDueStatus = (dueDate) => {
-    if (!dueDate) return { label: "Active Loan", cls: "active" };
+    if (!dueDate) return { label: "Borrowed", cls: "active" };
     const days = Math.ceil((new Date(dueDate) - new Date()) / 86400000);
     if (days < 0) return { label: `Overdue by ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"}`, cls: "overdue" };
     if (days === 0) return { label: "Due Today", cls: "active" };
@@ -343,7 +343,7 @@ function PatronDashboard() {
 
   const nextDueLabel = myStats.nextDueDate
     ? formatDate(myStats.nextDueDate)
-    : "No active loans";
+    : "No borrowed books";
   const nextDueDays = myStats.nextDueDate
     ? Math.ceil((new Date(myStats.nextDueDate) - new Date()) / 86400000)
     : null;
@@ -471,7 +471,7 @@ function PatronDashboard() {
                 <div className="overview-card-left">
                   <div className="overview-card-icon-box blue"><BookmarkCheck size={22} /></div>
                   <div className="overview-card-info">
-                    <span className="overview-card-label">My active loans</span>
+                    <span className="overview-card-label">Currently borrowed</span>
                     <span className="overview-card-value">{myStats.activeLoans}</span>
                     <span className="overview-card-sub">Books checked out</span>
                   </div>
@@ -588,7 +588,7 @@ function PatronDashboard() {
                       {loadingLoans ? (
                         <tr>
                           <td colSpan={5} style={{ textAlign: "center", padding: "16px", color: "var(--text-muted)" }}>
-                            Loading your loans...
+                            Loading your borrowed books...
                           </td>
                         </tr>
                       ) : myLoans.length === 0 ? (
@@ -1007,7 +1007,7 @@ function PatronDashboard() {
             <div className="recent-transactions-card">
               <div className="card-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
                 <h3 className="card-header-title" style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>
-                  Active Loan Records ({myLoans.length})
+                  Currently Borrowed Books ({myLoans.length})
                 </h3>
                 <div style={{ position: "relative", minWidth: "220px", maxWidth: "340px", flex: 1 }}>
                   <Search
@@ -1075,13 +1075,13 @@ function PatronDashboard() {
                           {loadingLoans ? (
                             <tr>
                               <td colSpan={7} style={{ textAlign: "center", padding: "16px", color: "var(--text-muted)" }}>
-                                Loading your loans...
+                                Loading your borrowed books...
                               </td>
                             </tr>
                           ) : visible.length === 0 ? (
                             <tr>
                               <td colSpan={7} style={{ textAlign: "center", padding: "24px", color: "var(--text-muted)" }}>
-                                {query ? `No loans matching "${loansSearchQuery}"` : "You have no borrowed books right now. Browse the catalog to check one out."}
+                                {query ? `No borrowed books matching "${loansSearchQuery}"` : "You have no borrowed books right now. Browse the catalog to check one out."}
                               </td>
                             </tr>
                           ) : (
@@ -1120,7 +1120,7 @@ function PatronDashboard() {
                         borderTop: "1px solid var(--border)",
                       }}>
                         <span>
-                          Showing {visible.length} of {filtered.length} active loan{filtered.length !== 1 ? "s" : ""}
+                          Showing {visible.length} of {filtered.length} borrowed book{filtered.length !== 1 ? "s" : ""}
                           {query && ` (filtered)`}
                         </span>
                         {hasMore && (

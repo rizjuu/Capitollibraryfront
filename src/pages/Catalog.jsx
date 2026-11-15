@@ -675,17 +675,16 @@ function Catalog({
           {/* Catalog Pagination */}
           {filteredBooks.length > 0 && (
             <div className="catalog-pagination" role="navigation" aria-label="Catalog Books Pagination">
-              {safeCurrentPage > 1 && (
-                <button
-                  type="button"
-                  className="pagination-btn-nav"
-                  onClick={() => handlePageChange(safeCurrentPage - 1)}
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft size={16} strokeWidth={2.5} />
-                  <span>Prev</span>
-                </button>
-              )}
+              <button
+                type="button"
+                className="pagination-btn-nav"
+                disabled={safeCurrentPage <= 1}
+                onClick={() => handlePageChange(safeCurrentPage - 1)}
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={16} strokeWidth={2.5} />
+                <span>Prev</span>
+              </button>
 
               <div className="pagination-numbers" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                 {getPageNumbers().map((pageNum, idx) => {
@@ -712,17 +711,16 @@ function Catalog({
                 })}
               </div>
 
-              {safeCurrentPage < totalPages && (
-                <button
-                  type="button"
-                  className="pagination-btn-nav"
-                  onClick={() => handlePageChange(safeCurrentPage + 1)}
-                  aria-label="Next page"
-                >
-                  <span>Next</span>
-                  <ChevronRight size={16} strokeWidth={2.5} />
-                </button>
-              )}
+              <button
+                type="button"
+                className="pagination-btn-nav"
+                disabled={safeCurrentPage >= totalPages}
+                onClick={() => handlePageChange(safeCurrentPage + 1)}
+                aria-label="Next page"
+              >
+                <span>Next</span>
+                <ChevronRight size={16} strokeWidth={2.5} />
+              </button>
 
               <span className="pagination-summary">
                 Page {safeCurrentPage} of {totalPages} ({filteredBooks.length} books)

@@ -292,16 +292,11 @@ export default function Header({
                   marginBottom: "4px",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
-                  <p style={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary, #4B3832)", margin: 0 }}>
-                    {displayName}
-                  </p>
-                  <span className="id-chip" style={{ fontSize: "10px", fontWeight: 700, padding: "1px 6px" }}>
-                    {formatPatronId(user)}
-                  </span>
-                </div>
+                <p style={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary, #4B3832)", margin: 0 }}>
+                  {displayName}
+                </p>
                 <p style={{ fontSize: "11px", color: "var(--text-muted, #8C7768)", margin: "2px 0 0" }}>
-                  {user?.email || formatPatronId(user)}
+                  {user?.email || user?.username || displayRole}
                 </p>
               </div>
 

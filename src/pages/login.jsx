@@ -275,7 +275,7 @@ function Login({ overlay = false }) {
               <>
                 <h2 className="login-title">Create Patron Account</h2>
                 <p className="login-description">
-                  Sign up to access the library catalog and manage your loans. You can complete your patron profile after signing in.
+                  Sign up to access the library catalog and manage your borrowed books. You can complete your patron profile after signing in.
                 </p>
 
                 {error && <div className="login-error" role="alert">{error}</div>}

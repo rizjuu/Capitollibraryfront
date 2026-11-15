@@ -1264,29 +1264,68 @@
   outline: none;
 }
 
-.toolbar-select {
-  height: 48px;
-  padding: 0 18px;
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: 15px;
-  font-weight: 600;
-  font-family: var(--font-sans);
+select,
+.filter-select,
+.toolbar-select,
+.form-select,
+.select-field {
+  height: 42px;
+  padding: 0 34px 0 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: var(--font-sans, inherit);
+  color: var(--text-primary, #4B3832);
+  background-color: var(--bg-surface, #FFFDF7);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236F4E37' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+  border: 1px solid var(--border, #DCC7AA);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 1px 2px rgba(75, 56, 50, 0.04);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s;
-}
-
-.toolbar-select option {
-  font-size: 15px;
-  padding: 6px 10px;
-}
-
-.toolbar-select:focus {
-  border-color: var(--color-primary);
   outline: none;
+  transition: all 0.2s ease;
+}
+
+select:hover,
+.filter-select:hover,
+.toolbar-select:hover,
+.form-select:hover,
+.select-field:hover {
+  border-color: var(--border-hover, #BFA888);
+  background-color: var(--bg-elevated, #FFFFFF);
+}
+
+select:focus,
+.filter-select:focus,
+.toolbar-select:focus,
+.form-select:focus,
+.select-field:focus {
+  border-color: var(--color-primary, #6F4E37);
+  box-shadow: 0 0 0 3px var(--color-primary-ring, rgba(111, 78, 55, 0.2));
+  outline: none;
+  background-color: var(--bg-elevated, #FFFFFF);
+}
+
+select option,
+.filter-select option,
+.toolbar-select option,
+.form-select option,
+.select-field option {
+  background-color: var(--bg-surface, #FFFDF7);
+  color: var(--text-primary, #4B3832);
+  padding: 8px 12px;
+  font-size: 13.5px;
+}
+
+.filter-select-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
 }
 
 .book-grid {
@@ -1422,6 +1461,162 @@
   margin-bottom: 24px;
   max-width: 380px;
   line-height: 1.5;
+}
+
+/* ============================================
+   CATALOG BOOKS PAGINATION (THEMED COFFEE & CREAM)
+   ============================================ */
+.catalog-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 40px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: var(--bg-surface, #FFFDF7);
+  border: 1px solid var(--border-subtle, #F5E6CA);
+  border-radius: var(--radius-xl, 16px);
+  box-shadow: 0 2px 8px rgba(75, 56, 50, 0.04);
+}
+
+.pagination-numbers,
+.pagination-pages-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination-number-btn,
+.pagination-btn-page {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #DCC7AA);
+  background: var(--bg-surface, #FFFDF7);
+  color: var(--text-primary, #4B3832);
+  font-family: var(--font-sans, inherit);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(75, 56, 50, 0.05);
+}
+
+.pagination-number-btn:hover:not(.active),
+.pagination-btn-page:hover:not(.active) {
+  background-color: var(--palette-cream, #F5E6CA);
+  border-color: var(--color-primary, #6F4E37);
+  color: var(--color-primary, #6F4E37);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(75, 56, 50, 0.1);
+}
+
+.pagination-number-btn.active,
+.pagination-btn-page.active {
+  background: linear-gradient(135deg, var(--color-primary, #6F4E37) 0%, var(--palette-espresso, #4B3832) 100%);
+  color: #FFFDF7 !important;
+  border-color: transparent;
+  font-weight: 700;
+  cursor: default;
+  transform: none;
+  box-shadow: 0 4px 12px rgba(75, 56, 50, 0.28);
+}
+
+.pagination-ellipsis {
+  width: 28px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #8C7768);
+  font-weight: 700;
+  font-size: 15px;
+  user-select: none;
+  letter-spacing: 1px;
+}
+
+.pagination-btn-nav {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-primary, #6F4E37);
+  background: var(--bg-surface, #FFFDF7);
+  color: var(--color-primary, #6F4E37);
+  font-family: var(--font-sans, inherit);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(75, 56, 50, 0.05);
+}
+
+.pagination-btn-nav:hover:not(:disabled) {
+  background: var(--color-primary, #6F4E37);
+  color: #FFFDF7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(75, 56, 50, 0.2);
+}
+
+.pagination-btn-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: var(--border, #DCC7AA);
+  color: var(--text-muted, #8C7768);
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.pagination-summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted, #8C7768);
+  background: rgba(111, 78, 55, 0.07);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(220, 199, 170, 0.6);
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+@media (max-width: 640px) {
+  .catalog-pagination {
+    gap: 8px;
+    padding: 12px 14px;
+    margin-top: 24px;
+  }
+
+  .pagination-number-btn,
+  .pagination-btn-page {
+    min-width: 34px;
+    height: 34px;
+    font-size: 13px;
+    border-radius: 8px;
+    padding: 0 6px;
+  }
+
+  .pagination-btn-nav {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .pagination-summary {
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+    margin-top: 4px;
+  }
 }
 
 /* Toast Notifications */

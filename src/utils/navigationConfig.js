@@ -21,7 +21,7 @@ export function getSidebarCategories() {
     },
     {
       id: "catalog-loans",
-      title: "Catalog & Loans",
+      title: "Catalog & Borrowing",
       items: [
         { id: "books", label: "Browse Catalog", icon: Search },
         { id: "my-reservations", label: "Holds & Reservations", icon: CalendarCheck },
@@ -45,7 +45,7 @@ export function getPageHeaderInfo(activeTab = "dashboard", role = "patron", user
       return {
         title: "Library Overview",
         emoji: "📖",
-        subtitle: `Welcome back, ${user?.name || "Patron"}! Track active loans, due dates, and book recommendations.`,
+        subtitle: `Welcome back, ${user?.name || "Patron"}! Track borrowed books, due dates, and book recommendations.`,
         category: "Overview",
       };
     case "books":
@@ -53,28 +53,28 @@ export function getPageHeaderInfo(activeTab = "dashboard", role = "patron", user
         title: "Browse Catalog",
         emoji: "📚",
         subtitle: "Search and explore books available to borrow across all library collections.",
-        category: "Catalog & Loans",
+        category: "Catalog & Borrowing",
       };
     case "my-reservations":
       return {
         title: "My Reservations & Waiting List",
         emoji: "📅",
         subtitle: "Track your scheduled book pickups, waiting queue positions, and hold deadlines.",
-        category: "Catalog & Loans",
+        category: "Catalog & Borrowing",
       };
     case "my-loans":
       return {
         title: "My Borrowed Books",
         emoji: "🔖",
-        subtitle: "Manage your active loans and track upcoming return deadlines.",
-        category: "Catalog & Loans",
+        subtitle: "Manage your borrowed books and track upcoming return deadlines.",
+        category: "Catalog & Borrowing",
       };
     case "history":
       return {
         title: "Borrowing History",
         emoji: "🕒",
-        subtitle: "Review your past completed loans and borrowing timeline.",
-        category: "Catalog & Loans",
+        subtitle: "Review your past borrowed books and borrowing timeline.",
+        category: "Catalog & Borrowing",
       };
     case "my-info":
       return {

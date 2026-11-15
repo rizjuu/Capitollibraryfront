@@ -2,7 +2,6 @@ import { X, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getSidebarCategories } from "../utils/navigationConfig";
-import { formatPatronId } from "../utils/patronUtils";
 
 export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
   const { user, logout } = useAuth();
@@ -95,9 +94,7 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
             <span className="sidebar-user-name" style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
               {displayName}
             </span>
-            <span className="sidebar-user-role" style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "11px", letterSpacing: "0.03em" }}>
-              {formatPatronId(user)}
-            </span>
+
           </div>
         </div>
 
