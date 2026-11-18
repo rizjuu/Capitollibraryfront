@@ -19,10 +19,19 @@ api.interceptors.response.use(
   (error) => {
     const isAuthRequest = error.config?.url?.includes("/auth/");
     if (error.response && error.response.status === 401 && !isAuthRequest) {
+      const isSessionTerminated = error.response.data?.code === "SESSION_TERMINATED" || error.response.data?.sessionTerminated;
+
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
+
+      if (isSessionTerminated) {
+        sessionStorage.setItem(
+          "session_terminated_alert",
+          "You were signed out because your account was logged in from another device or browser. Only one active session is allowed."
+        );
+      }
 
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";

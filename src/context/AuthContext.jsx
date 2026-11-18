@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import api from "../api";
 
 const AuthContext = createContext();
 
@@ -52,7 +53,13 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Notify backend to clear session ID (fire-and-forget)
+    const currentToken = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (currentToken) {
+      api.post("/auth/logout").catch(() => {});
+    }
+
     setUser(null);
     setToken(null);
     localStorage.removeItem("user");

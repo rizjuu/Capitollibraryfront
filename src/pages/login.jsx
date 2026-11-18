@@ -19,6 +19,16 @@ function Login({ overlay = false }) {
     }
   }, [user, navigate]);
 
+  // Show session terminated alert if redirected from another device login
+  const [sessionAlert, setSessionAlert] = useState("");
+  useEffect(() => {
+    const alert = sessionStorage.getItem("session_terminated_alert");
+    if (alert) {
+      sessionStorage.removeItem("session_terminated_alert");
+      setSessionAlert(alert);
+    }
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -458,6 +468,13 @@ function Login({ overlay = false }) {
                 <p className="login-description">
                   Access your patron account, borrow records, and catalog reservations.
                 </p>
+
+                {sessionAlert && (
+                  <div className="login-error" role="alert" style={{ background: "#fff3cd", color: "#856404", border: "1px solid #ffc107", borderRadius: "8px", padding: "10px 14px", marginBottom: "12px", fontSize: "0.92rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "1.15em" }}>⚠️</span>
+                    <span>{sessionAlert}</span>
+                  </div>
+                )}
 
                 {error && <div className="login-error" role="alert">{error}</div>}
 
