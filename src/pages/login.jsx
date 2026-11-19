@@ -62,6 +62,31 @@ function Login({ overlay = false }) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [forgotCooldown, setForgotCooldown] = useState(0);
+
+  // Countdown timer for forgot password cooldown
+  useEffect(() => {
+    if (forgotCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setForgotCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [forgotCooldown]);
+
+  const formatCooldown = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
 
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
@@ -159,6 +184,7 @@ function Login({ overlay = false }) {
   };
   const handleRequestResetCode = async (e) => {
     if (e) e.preventDefault();
+    if (forgotCooldown > 0) return;
     setError("");
     setSuccessMessage("");
     setLoading(true);
@@ -175,8 +201,12 @@ function Login({ overlay = false }) {
       setSuccessMessage(msg);
       setForgotStep(2);
     } catch (err) {
+      const respData = err.response?.data;
+      if (err.response?.status === 429 && respData?.retryAfterMs) {
+        setForgotCooldown(Math.ceil(respData.retryAfterMs / 1000));
+      }
       setError(
-        err.response?.data?.message ||
+        respData?.message ||
         "Failed to request password reset code. Please check your username/email."
       );
     } finally {
@@ -595,9 +625,9 @@ function Login({ overlay = false }) {
                       <button
                         type="submit"
                         className="login-submit-btn"
-                        disabled={loading}
+                        disabled={loading || forgotCooldown > 0}
                       >
-                        {loading ? "Sending..." : "Send Verification Code"}
+                        {loading ? "Sending..." : forgotCooldown > 0 ? `Try again in ${formatCooldown(forgotCooldown)}` : "Send Verification Code"}
                       </button>
 
                       <button
