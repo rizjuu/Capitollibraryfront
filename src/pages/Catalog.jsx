@@ -20,6 +20,8 @@ import {
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
 import { generateCallNumber, resolveSublocation, OFFICIAL_SECTIONS } from "../utils/libraryDetails";
+import usePersistentState from "../hooks/usePersistentState";
+import socket from "../services/socket";
 
 export const stripParentheses = (str) => {
   if (!str) return "";
@@ -42,11 +44,11 @@ function Catalog({
   showToast = () => {}
 }) {
   const { user } = useAuth();
-  const [search, setSearch] = useState("");
-  const [sectionFilter, setSectionFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [shelfFilter, setShelfFilter] = useState("all");
-  const [availabilityFilter, setAvailabilityFilter] = useState("all");
+  const [search, setSearch] = usePersistentState("patron_cat_search", "");
+  const [sectionFilter, setSectionFilter] = usePersistentState("patron_cat_section", "all");
+  const [categoryFilter, setCategoryFilter] = usePersistentState("patron_cat_category", "all");
+  const [shelfFilter, setShelfFilter] = usePersistentState("patron_cat_shelf", "all");
+  const [availabilityFilter, setAvailabilityFilter] = usePersistentState("patron_cat_avail", "all");
   const [selectedBook, setSelectedBook] = useState(null);
   const [reservingBookId, setReservingBookId] = useState(null);
 
@@ -61,6 +63,25 @@ function Catalog({
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 7);
   const maxDateStr = maxDate.toISOString().split("T")[0];
+
+  // Real-time: refresh book list when catalog-relevant events fire
+  useEffect(() => {
+    const refresh = () => { if (onBookUpdated) onBookUpdated(); };
+    socket.on("book:created", refresh);
+    socket.on("book:updated", refresh);
+    socket.on("book:archived", refresh);
+    socket.on("book:restored", refresh);
+    socket.on("transaction:borrow", refresh);
+    socket.on("transaction:return", refresh);
+    return () => {
+      socket.off("book:created", refresh);
+      socket.off("book:updated", refresh);
+      socket.off("book:archived", refresh);
+      socket.off("book:restored", refresh);
+      socket.off("transaction:borrow", refresh);
+      socket.off("transaction:return", refresh);
+    };
+  }, [onBookUpdated]);
 
   // Extract unique clean Sections (without parentheses) from live books array and official sections
   const sections = Array.from(

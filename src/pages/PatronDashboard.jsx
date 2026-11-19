@@ -36,16 +36,18 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPatronId } from "../utils/patronUtils";
+import usePersistentState from "../hooks/usePersistentState";
+import socket from "../services/socket";
 
 function PatronDashboard() {
   const { user, updateUser, theme, toggleTheme } = useAuth();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = usePersistentState("patron_tab", "dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [books, setBooks] = useState([]);
   const [loadingBooks, setLoadingBooks] = useState(false);
   const [toasts, setToasts] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = usePersistentState("patron_catalog_search", "");
+  const [categoryFilter, setCategoryFilter] = usePersistentState("patron_category_filter", "all");
   const [myLoans, setMyLoans] = useState([]);
   const [myHistory, setMyHistory] = useState([]);
   const [myReservations, setMyReservations] = useState([]);
@@ -58,12 +60,12 @@ function PatronDashboard() {
   });
   const [loadingLoans, setLoadingLoans] = useState(true);
 
-  // Search & Limit States
-  const [loansSearchQuery, setLoansSearchQuery] = useState("");
+  // Search & Limit States (remembered across tab switches)
+  const [loansSearchQuery, setLoansSearchQuery] = usePersistentState("patron_loans_search", "");
   const [loansShowAll, setLoansShowAll] = useState(false);
   const LOANS_PAGE_SIZE = 10;
 
-  const [historySearchQuery, setHistorySearchQuery] = useState("");
+  const [historySearchQuery, setHistorySearchQuery] = usePersistentState("patron_history_search", "");
   const [historyShowAll, setHistoryShowAll] = useState(false);
   const HISTORY_PAGE_SIZE = 10;
 
@@ -171,6 +173,37 @@ function PatronDashboard() {
     fetchMyHistory();
     fetchMyReservations();
     fetchMyStats();
+
+    // WebSocket: Real-time live update for patron when system happenings occur
+    const handlePatronLiveUpdate = (evt) => {
+      fetchBooks();
+      fetchMyLoans();
+      fetchMyHistory();
+      fetchMyReservations();
+      fetchMyStats();
+
+      if (evt && evt.module === "announcements" && evt.action === "created") {
+        showToast(`📢 Library Notice: "${evt.data?.title || 'New announcement'}"`, "info");
+      }
+    };
+
+    socket.on("system:happening", handlePatronLiveUpdate);
+    socket.on("reservation:created", handlePatronLiveUpdate);
+    socket.on("reservation:cancelled", handlePatronLiveUpdate);
+    socket.on("reservation:updated", handlePatronLiveUpdate);
+    socket.on("transaction:borrow", handlePatronLiveUpdate);
+    socket.on("transaction:return", handlePatronLiveUpdate);
+    socket.on("book:created", handlePatronLiveUpdate);
+
+    return () => {
+      socket.off("system:happening", handlePatronLiveUpdate);
+      socket.off("reservation:created", handlePatronLiveUpdate);
+      socket.off("reservation:cancelled", handlePatronLiveUpdate);
+      socket.off("reservation:updated", handlePatronLiveUpdate);
+      socket.off("transaction:borrow", handlePatronLiveUpdate);
+      socket.off("transaction:return", handlePatronLiveUpdate);
+      socket.off("book:created", handlePatronLiveUpdate);
+    };
   }, []);
 
   // Helper validations for email and mobile phone number for SMS
